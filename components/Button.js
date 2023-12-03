@@ -10,7 +10,12 @@ const Button = (props) => {
 
 	return (
 		<TouchableOpacity
-			style={[styles.button, { backgroundColor: bgColor }, props.style]}
+			style={[
+				styles.button,
+				{ backgroundColor: bgColor, borderColor: bgColor },
+				props.style,
+			]}
+			disabled={props.disabled}
 			onPress={props.onPress}>
 			<Text style={[{ fontSize: 18 }, { color: textColor }]}>
 				{props.title}
@@ -22,7 +27,6 @@ const Button = (props) => {
 const styles = StyleSheet.create({
 	button: {
 		paddingVertical: 13,
-		borderColor: COLORS.primary,
 		borderWidth: 2,
 		borderRadius: 12,
 		alignItems: 'center',
