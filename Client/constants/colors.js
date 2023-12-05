@@ -8,6 +8,8 @@ const COLORS = {
 	lightPurple: '#DDD5F3',
 	darkPurple: '#3E037F',
 	emeraldGreen: '#50C878',
+	darkGrey: '#565656',
+	pink: '#D01AE1',
 };
 
 export default COLORS;

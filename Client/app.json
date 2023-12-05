@@ -1,0 +1,39 @@
+{
+	"expo": {
+		"name": "OTWLah-React-Native",
+		"slug": "OTWLah-React-Native",
+		"version": "1.0.0",
+		"orientation": "portrait",
+		"icon": "./assets/icon.png",
+		"userInterfaceStyle": "light",
+		"splash": {
+			"image": "./assets/splash.png",
+			"resizeMode": "contain",
+			"backgroundColor": "#ffffff"
+		},
+		"assetBundlePatterns": ["**/*"],
+		"ios": {
+			"supportsTablet": true,
+			"bundleIdentifier": "com.itseyan.OTWLah",
+			"infoPlist": {
+				"NSCameraUsageDescription": "This app uses the camera to scan barcodes on event tickets.",
+				"NSAllowsArbitraryLoads": true
+			}
+		},
+		"android": {
+			"adaptiveIcon": {
+				"foregroundImage": "./assets/adaptive-icon.png",
+				"backgroundColor": "#ffffff"
+			},
+			"package": "com.itseyan.OTWLah"
+		},
+		"web": {
+			"favicon": "./assets/favicon.png"
+		},
+		"extra": {
+			"eas": {
+				"projectId": "7b4c13d3-7b25-4169-91c7-9572d10d613a"
+			}
+		}
+	}
+}
