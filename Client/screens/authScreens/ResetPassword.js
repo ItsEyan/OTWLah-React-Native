@@ -2,12 +2,12 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
 import React, { useState } from 'react';
 import { Keyboard, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import Button from '../components/Button';
-import InputField from '../components/InputField';
-import KeyboardAvoidingWrapper from '../components/KeyboardAvoidingWrapper';
-import VerificationModal from '../components/VerificationModal';
-import COLORS from '../constants/colors';
-import { baseAPIUrl, firebaseURL } from '../constants/sharedVariables';
+import Button from '../../components/Button';
+import InputField from '../../components/InputField';
+import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
+import VerificationModal from '../../components/VerificationModal';
+import COLORS from '../../constants/colors';
+import { baseAPIUrl, firebaseURL } from '../../constants/sharedVariables';
 
 const ResetPassword = () => {
 	const { wrapper, container, header, description } = styles;

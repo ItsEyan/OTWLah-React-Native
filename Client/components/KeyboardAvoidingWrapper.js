@@ -1,12 +1,6 @@
 import React from 'react';
-import { Keyboard, KeyboardAvoidingView, ScrollView } from 'react-native';
+import { KeyboardAvoidingView, ScrollView } from 'react-native';
 import COLORS from '../constants/colors';
-
-function dismissKeyboard() {
-	if (Platform.OS != 'web') {
-		Keyboard.dismiss();
-	}
-}
 
 const KeyboardAvoidingWrapper = ({ children }) => {
 	return (

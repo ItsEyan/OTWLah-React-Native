@@ -13,13 +13,13 @@ import {
 	Text,
 	View,
 } from 'react-native';
-import { FIREBASE_DB } from '../FirebaseConfig';
-import Button from '../components/Button';
-import InputField from '../components/InputField';
-import KeyboardAvoidingWrapper from '../components/KeyboardAvoidingWrapper';
-import { InfoText } from '../components/styles';
-import COLORS from '../constants/colors';
-import { baseAPIUrl } from '../constants/sharedVariables';
+import { FIREBASE_DB } from '../../FirebaseConfig';
+import Button from '../../components/Button';
+import InputField from '../../components/InputField';
+import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
+import { InfoText } from '../../components/styles';
+import COLORS from '../../constants/colors';
+import { baseAPIUrl } from '../../constants/sharedVariables';
 
 const Register = () => {
 	const { wrapper, container, header, description } = styles;

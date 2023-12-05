@@ -1,7 +1,11 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
-import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import {
+	createUserWithEmailAndPassword,
+	getAuth,
+	signInWithEmailAndPassword,
+} from 'firebase/auth';
 import { deleteDoc, doc, setDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
@@ -12,14 +16,14 @@ import {
 	Text,
 	View,
 } from 'react-native';
-import { FIREBASE_DB } from '../FirebaseConfig';
-import Button from '../components/Button';
-import CodeInputField from '../components/CodeInputField';
-import KeyboardAvoidingWrapper from '../components/KeyboardAvoidingWrapper';
-import ResendTimer from '../components/ResendTimer';
-import VerificationModal from '../components/VerificationModal';
-import COLORS from '../constants/colors';
-import { baseAPIUrl } from '../constants/sharedVariables';
+import { FIREBASE_DB } from '../../FirebaseConfig';
+import Button from '../../components/Button';
+import CodeInputField from '../../components/CodeInputField';
+import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
+import ResendTimer from '../../components/ResendTimer';
+import VerificationModal from '../../components/VerificationModal';
+import COLORS from '../../constants/colors';
+import { baseAPIUrl } from '../../constants/sharedVariables';
 
 const OTPVerification = () => {
 	const {
@@ -40,6 +44,7 @@ const OTPVerification = () => {
 	const email = route.params.email;
 	const username = route.params.username;
 	const password = route.params.password;
+	const { dispatchSignedIn } = useContext(SignInContext);
 
 	//firebase
 	const auth = getAuth();
@@ -164,12 +169,19 @@ const OTPVerification = () => {
 			email: email.toLowerCase(),
 		});
 		await deleteDoc(doc(db, 'otp_verification', email));
+
+		signInWithEmailAndPassword(auth, email, password);
 	};
 
 	const persistLoginAfterOTPVerification = async () => {
 		if (password === null) {
 			navigation.navigate('ResetPassword', {
 				email: email,
+			});
+		} else {
+			dispatchSignedIn({
+				type: 'UDATE_SIGN_IN',
+				payload: { userToken: 'signed-in' },
 			});
 		}
 	};
@@ -185,7 +197,7 @@ const OTPVerification = () => {
 							style={iconBg}>
 							<Image
 								style={{ width: '100%', height: '100%', opacity: 1 }}
-								source={require('../assets/OTWLahLogo.png')}
+								source={require('../../assets/OTWLahLogo.png')}
 							/>
 						</LinearGradient>
 					</View>

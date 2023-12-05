@@ -3,7 +3,9 @@ import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
+import { SignInContext } from '../../contexts/authContext';
+
 import {
 	Dimensions,
 	Image,
@@ -16,13 +18,13 @@ import {
 	View,
 } from 'react-native';
 import SlidingUpPanel from 'rn-sliding-up-panel';
-import { FIREBASE_DB } from '../FirebaseConfig';
-import Button from '../components/Button';
-import InputField from '../components/InputField';
-import KeyboardAvoidingWrapper from '../components/KeyboardAvoidingWrapper';
-import { InfoText } from '../components/styles';
-import COLORS from '../constants/colors';
-import { baseAPIUrl } from '../constants/sharedVariables';
+import { FIREBASE_DB } from '../../FirebaseConfig';
+import Button from '../../components/Button';
+import InputField from '../../components/InputField';
+import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
+import { InfoText } from '../../components/styles';
+import COLORS from '../../constants/colors';
+import { baseAPIUrl } from '../../constants/sharedVariables';
 
 const Login = () => {
 	const {
@@ -44,6 +46,9 @@ const Login = () => {
 	const [forgotPasswordSelected, setForgotPasswordSelected] = useState(false);
 	const [registerSelected, setRegisterSelected] = useState(false);
 	const navigation = useNavigation();
+
+	const { dispatchSignedIn } = useContext(SignInContext);
+
 	const auth = getAuth();
 	const db = FIREBASE_DB;
 
@@ -68,11 +73,12 @@ const Login = () => {
 		}
 		await signInWithEmailAndPassword(auth, email, password)
 			.then((userCredential) => {
-				const user = userCredential.user;
 				setEmailError('');
 				setPasswordError('');
-				console.log(user);
-				navigation.navigate('Map');
+				dispatchSignedIn({
+					type: 'UDATE_SIGN_IN',
+					payload: { userToken: 'signed-in' },
+				});
 			})
 			.catch((error) => {
 				const errorCode = error.code;
@@ -188,7 +194,7 @@ const Login = () => {
 							style={iconBg}>
 							<Image
 								style={{ width: '100%', height: '100%', opacity: 1 }}
-								source={require('../assets/OTWLahLogo.png')}
+								source={require('../../assets/OTWLahLogo.png')}
 							/>
 						</LinearGradient>
 					</View>
