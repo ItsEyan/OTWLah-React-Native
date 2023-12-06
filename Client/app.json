@@ -18,6 +18,9 @@
 			"infoPlist": {
 				"NSCameraUsageDescription": "This app uses the camera to scan barcodes on event tickets.",
 				"NSAllowsArbitraryLoads": true
+			},
+			"config": {
+				"googleMapsApiKey": "AIzaSyCxlOmGq8HBOfB03ITpnPK5TcxCG6oS8RQ"
 			}
 		},
 		"android": {
