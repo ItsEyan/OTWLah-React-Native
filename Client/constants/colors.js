@@ -31,6 +31,7 @@ const COLORS = {
 	gold: 'gold',
 	line: '#282C35',
 	darkGray: '#999999',
+	fabDarkPurple: '#7625C6',
 };
 
 export default COLORS;

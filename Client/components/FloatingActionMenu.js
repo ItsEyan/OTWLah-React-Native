@@ -1,98 +1,164 @@
-import { FontAwesome5, Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
+import { useNavigation } from '@react-navigation/native';
+import React, { useReducer } from 'react';
+import {
+	Dimensions,
+	StyleSheet,
+	TouchableWithoutFeedback,
+	View,
+} from 'react-native';
+import Animated, {
+	Extrapolate,
+	interpolate,
+	interpolateColor,
+	useAnimatedStyle,
+	useDerivedValue,
+	withSpring,
+	withTiming,
+} from 'react-native-reanimated';
 import COLORS from '../constants/colors';
+import ActionButton from './FloatingActionButton';
+import Icon, { Icons } from './Icons';
 
-const FloatingActionMenu = () => {
-	const [icon_1] = useState(new Animated.Value(40));
-	const [icon_2] = useState(new Animated.Value(40));
-	const [icon_3] = useState(new Animated.Value(40));
+const { width } = Dimensions.get('window');
 
-	const [pop, setPop] = useState(false);
+const FAB_SIZE = 54;
+const circleScale = (width / FAB_SIZE).toFixed(1);
+const circleSize = circleScale * FAB_SIZE;
+const dist = circleSize / 2 - FAB_SIZE;
+const middleDist = dist / 1.41;
 
-	const popIn = () => {
-		setPop(true);
-		Animated.timing(icon_1, {
-			toValue: 130,
-			duration: 500,
-			useNativeDriver: false,
-		}).start();
+export default function FloatingActionMenu() {
+	const [open, toggle] = useReducer((s) => !s, false);
 
-		Animated.timing(icon_2, {
-			toValue: 110,
-			duration: 500,
-			useNativeDriver: false,
-		}).start();
+	const navigation = useNavigation();
 
-		Animated.timing(icon_3, {
-			toValue: 130,
-			duration: 500,
-			useNativeDriver: false,
-		}).start();
-	};
+	const rotation = useDerivedValue(() => {
+		return withTiming(open ? '0deg' : '135deg');
+	}, [open]);
 
-	const popOut = () => {
-		setPop(false);
-		Animated.timing(icon_1, {
-			toValue: 40,
-			duration: 500,
-			useNativeDriver: false,
-		}).start();
+	const progress = useDerivedValue(() => {
+		return open ? withSpring(1) : withSpring(0);
+	});
 
-		Animated.timing(icon_2, {
-			toValue: 40,
-			duration: 500,
-			useNativeDriver: false,
-		}).start();
+	const translation = useDerivedValue(() => {
+		return open ? withSpring(1, { stiffness: 80, damping: 8 }) : withSpring(0);
+	});
 
-		Animated.timing(icon_3, {
-			toValue: 40,
-			duration: 500,
-			useNativeDriver: false,
-		}).start();
+	const fabStyles = useAnimatedStyle(() => {
+		const rotate = rotation.value;
+		const backgroundColor = interpolateColor(
+			progress.value,
+			[0, 1],
+			[COLORS.primary, COLORS.fabDarkPurple]
+		);
+		return {
+			transform: [{ rotate }],
+			backgroundColor,
+		};
+	});
+
+	const scalingStyles = useAnimatedStyle(() => {
+		const scale = interpolate(progress.value, [0, 1], [0, circleScale]);
+		return {
+			transform: [{ scale }],
+		};
+	});
+
+	const translationStyles = (x, y, value) =>
+		useAnimatedStyle(() => {
+			const translate = interpolate(translation.value, [0, 1], [0, -value], {
+				extrapolateLeft: Extrapolate.CLAMP,
+			});
+			const scale = interpolate(progress.value, [0, 1], [0, 1], {
+				extrapolateLeft: Extrapolate.CLAMP,
+			});
+			if (x && y) {
+				return {
+					transform: [
+						{ translateX: translate },
+						{ translateY: translate },
+						{ scale },
+					],
+				};
+			} else if (x) {
+				return {
+					transform: [{ translateX: translate }, { scale }],
+				};
+			} else {
+				return {
+					transform: [{ translateY: translate }, { scale }],
+				};
+			}
+		});
+
+	const openSettings = () => {
+		toggle();
+		navigation.navigate('Settings');
 	};
 
 	return (
-		<View style={{ flex: 1 }}>
-			<Animated.View style={[styles.circle, { bottom: icon_1 }]}>
-				<TouchableOpacity>
-					<Ionicons name="settings-sharp" size={25} color={COLORS.white} />
-				</TouchableOpacity>
-			</Animated.View>
-			<Animated.View style={[styles.circle, { bottom: icon_2, right: icon_2 }]}>
-				<TouchableOpacity>
-					<FontAwesome5 name="user-plus" size={25} color={COLORS.white} />
-				</TouchableOpacity>
-			</Animated.View>
-			<Animated.View style={[styles.circle, { right: icon_3 }]}>
-				<TouchableOpacity>
-					<FontAwesome5 name="user-plus" size={25} color={COLORS.white} />
-				</TouchableOpacity>
-			</Animated.View>
-			<TouchableOpacity
-				style={styles.circle}
-				onPress={() => {
-					pop === false ? popIn() : popOut();
-				}}>
-				<Icon name="plus" size={25} color={COLORS.white} />
-			</TouchableOpacity>
+		<View style={styles.container}>
+			<View style={styles.fabContainer}>
+				<Animated.View style={[styles.expandingCircle, scalingStyles]} />
+				<TouchableWithoutFeedback onPress={toggle}>
+					<Animated.View style={[styles.fab, fabStyles]}>
+						<Icon
+							type={Icons.EvilIcons}
+							name="close"
+							color={COLORS.white}
+							size={34}
+						/>
+					</Animated.View>
+				</TouchableWithoutFeedback>
+				<ActionButton
+					style={translationStyles(false, true, dist)}
+					iconType={Icons.EvilIcons}
+					iconName="calendar"
+				/>
+				<ActionButton
+					style={translationStyles(true, true, middleDist)}
+					iconType={Icons.EvilIcons}
+					iconName="share-google"
+				/>
+				<ActionButton
+					style={translationStyles(true, false, dist)}
+					iconType={Icons.EvilIcons}
+					iconName="gear"
+					onPress={openSettings}
+				/>
+			</View>
 		</View>
 	);
+}
+
+const CircleStyle = {
+	width: FAB_SIZE,
+	height: FAB_SIZE,
+	borderRadius: FAB_SIZE / 2,
+	justifyContent: 'center',
+	alignItems: 'center',
 };
 
 const styles = StyleSheet.create({
-	circle: {
-		backgroundColor: COLORS.primary,
-		width: 60,
-		height: 60,
+	container: {
+		flex: 1,
+		backgroundColor: COLORS.accent,
+	},
+	fabContainer: {
 		position: 'absolute',
-		bottom: 40,
-		right: 40,
-		borderRadius: 50,
-		justifyContent: 'center',
-		alignItems: 'center',
+		bottom: 20,
+		right: 20,
+	},
+	fab: {
+		...CircleStyle,
+		backgroundColor: COLORS.fabDarkPurple,
+		transform: [{ rotate: '135deg' }],
+	},
+	expandingCircle: {
+		...CircleStyle,
+		// transform: [{ scale: 8 }],
+		backgroundColor: COLORS.primary,
+		position: 'absolute',
+		zIndex: -1,
 	},
 });
-
-export default FloatingActionMenu;

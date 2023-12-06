@@ -17,7 +17,8 @@
 			"bundleIdentifier": "com.itseyan.OTWLah",
 			"infoPlist": {
 				"NSCameraUsageDescription": "This app uses the camera to scan barcodes on event tickets.",
-				"NSAllowsArbitraryLoads": true
+				"NSAllowsArbitraryLoads": true,
+				"CADisableMinimumFrameDurationOnPhone": true
 			},
 			"config": {
 				"googleMapsApiKey": "AIzaSyCxlOmGq8HBOfB03ITpnPK5TcxCG6oS8RQ"
@@ -37,6 +38,14 @@
 			"eas": {
 				"projectId": "7b4c13d3-7b25-4169-91c7-9572d10d613a"
 			}
-		}
+		},
+		"plugins": [
+			[
+				"expo-location",
+				{
+					"locationAlwaysAndWhenInUsePermission": "Allow OTWLah to use your location."
+				}
+			]
+		]
 	}
 }

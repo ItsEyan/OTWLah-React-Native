@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import React, { createContext, useEffect, useReducer, useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, View } from 'react-native';
 import COLORS from '../constants/colors';
 import { SignInReducer } from '../reducers/authReducers';
 
@@ -36,15 +36,20 @@ export const SignInContextProvider = (props) => {
 	const loadingScreen = () => {
 		return (
 			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-				<LinearGradient
-					colors={[COLORS.pink, COLORS.primary]}
-					start={{ x: 0, y: 0.7 }}
-					style={styles.iconBg}>
-					<Image
-						style={{ width: '100%', height: '100%', opacity: 1 }}
-						source={require('../assets/OTWLahLogo.png')}
-					/>
-				</LinearGradient>
+				<View style={{ flex: 1.5, justifyContent: 'flex-end' }}>
+					<LinearGradient
+						colors={[COLORS.pink, COLORS.primary]}
+						start={{ x: 0, y: 0.7 }}
+						style={[styles.iconBg]}>
+						<Image
+							style={{ width: '100%', height: '100%', opacity: 1 }}
+							source={require('../assets/OTWLahLogo.png')}
+						/>
+					</LinearGradient>
+				</View>
+				<View style={[styles.container, styles.horizontal]}>
+					<ActivityIndicator size="large" color={COLORS.primary} />
+				</View>
 			</View>
 		);
 	};
@@ -66,5 +71,16 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		opacity: 0.8,
+	},
+	container: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'flex-start',
+		marginTop: 20,
+	},
+	horizontal: {
+		flexDirection: 'row',
+		justifyContent: 'space-around',
+		padding: 10,
 	},
 });
