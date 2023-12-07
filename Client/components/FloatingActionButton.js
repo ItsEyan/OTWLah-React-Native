@@ -11,6 +11,7 @@ const ActionButton = ({
 	buttonStyle,
 	iconColor = COLORS.white,
 	fabSize = 54,
+	iconSize = fabSize / 2 + 7,
 	underlayColor = COLORS.pink,
 	onPress = () => {},
 }) => {
@@ -23,19 +24,26 @@ const ActionButton = ({
 			alignItems: 'center',
 			backgroundColor: COLORS.fabDarkPurple,
 			position: 'absolute',
+			opacity: 0.95,
 			zIndex: -1,
+		},
+		shadow: {
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowRadius: 5,
+			shadowOpacity: 0.4,
 		},
 	});
 	return (
 		<Animated.View style={[style, styles.actionBtn]}>
 			<TouchableHighlight
 				underlayColor={underlayColor}
-				style={[styles.actionBtn, buttonStyle]}
+				style={[styles.actionBtn, buttonStyle, styles.shadow]}
 				onPress={onPress}>
 				<Icon
 					type={iconType}
 					name={iconName}
-					size={fabSize / 2 + 7}
+					size={iconSize}
 					color={iconColor}
 				/>
 			</TouchableHighlight>

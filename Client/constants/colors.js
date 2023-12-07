@@ -10,6 +10,7 @@ const COLORS = {
 	emeraldGreen: '#50C878',
 	darkGrey: '#565656',
 	pink: '#D01AE1',
+	exitRed: '#D11A2A',
 
 	//primary: '#637aff',
 	// primaryDark: '#2759ff',
