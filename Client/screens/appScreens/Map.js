@@ -66,54 +66,31 @@ const Map = () => {
 	const searchBarFadeInOpacity = useSharedValue(0);
 	const searchBarYValue = useSharedValue(0);
 	const cardViewFadeInOpacity = useSharedValue(1);
-	const locationYValue = useSharedValue(0);
+	const translationYValue = useSharedValue(0);
 
 	const locationMoveDown = () => {
-		locationYValue.value = withTiming(0, {
+		translationYValue.value = withTiming(0, {
 			duration: 500,
 			easing: Easing.linear,
 		});
 	};
 
 	const locationMoveUp = () => {
-		locationYValue.value = withTiming(
-			-50,
-			{
-				duration: 300,
-				easing: Easing.linear,
-			},
-			(isFinished) => {
-				if (isFinished) locationYValue.value = 0;
-			}
-		);
+		translationYValue.value = withTiming(-50, {
+			duration: 300,
+			easing: Easing.linear,
+		});
 	};
 
 	const searchBarFadeIn = () => {
-		setSearchBarVisible(true);
 		searchBarFadeInOpacity.value = withTiming(1, {
-			duration: 500,
-			easing: Easing.linear,
-		});
-		searchBarYValue.value = withTiming(0, {
 			duration: 500,
 			easing: Easing.linear,
 		});
 	};
 
 	const searchBarFadeOut = () => {
-		searchBarFadeInOpacity.value = withTiming(
-			0,
-			{
-				duration: 200,
-				easing: Easing.linear,
-			},
-			(isFinished) => {
-				if (isFinished) {
-					runOnJS(setSearchBarVisible)(false);
-				}
-			}
-		);
-		searchBarYValue.value = withTiming(-50, {
+		searchBarFadeInOpacity.value = withTiming(0, {
 			duration: 200,
 			easing: Easing.linear,
 		});
@@ -143,7 +120,6 @@ const Map = () => {
 	const searchBarAnimatedStyle = useAnimatedStyle(() => {
 		return {
 			opacity: searchBarFadeInOpacity.value, // Use the value directly
-			transform: [{ translateY: searchBarYValue.value }],
 		};
 	});
 
@@ -153,9 +129,9 @@ const Map = () => {
 		};
 	});
 
-	const locationAnimationStyle = useAnimatedStyle(() => {
+	const translationAnimationStyle = useAnimatedStyle(() => {
 		return {
-			transform: [{ translateY: locationYValue.value }],
+			transform: [{ translateY: translationYValue.value }],
 		};
 	});
 
@@ -695,56 +671,35 @@ const Map = () => {
 				</MarkerAnimated>
 			</MapView>
 			<SafeAreaView style={styles.searchContainer}>
-				<Animated.View style={searchBarAnimatedStyle}>
-					{isSearchBarVisible && (
-						<GooglePlacesAutocomplete
-							placeholder="Search for a location..."
-							onPress={(data, details = null) => {
-								setPin({
-									latitude: details?.geometry?.location?.lat,
-									latitudeDelta: latDelta,
-									longitude: details?.geometry?.location?.lng,
-									longitudeDelta: longDelta,
-								});
-								setCurrentPlace(details);
-								moveToLocation(
-									details?.geometry?.location?.lat,
-									details?.geometry?.location?.lng
-								);
-								this._panel.show();
-							}}
-							query={{
-								key: GOOGLE_IOS_API_KEY,
-								language: 'en',
-								components: 'country:sg',
-							}}
-							enablePoweredByContainer={false}
-							fetchDetails={true}
-						/>
-					)}
-				</Animated.View>
-				<Animated.View style={cardViewAnimatedStyle}>
-					{isCardViewVisible && (
-						<View style={styles.cardView}>
-							<View
-								style={[
-									styles.shadow,
-									{
-										borderRadius: 5,
-										backgroundColor: COLORS.white,
-										paddingVertical: 10,
-										paddingHorizontal: 20,
-									},
-								]}>
-								<Text style={styles.cardTitle}>Arrive By</Text>
-								<Text style={styles.cardTime}>
-									{arrivalTime.toLocaleTimeString('en-US', displayOptions)}
-								</Text>
-							</View>
-						</View>
-					)}
-				</Animated.View>
-				<Animated.View style={locationAnimationStyle}>
+				<Animated.View style={translationAnimationStyle}>
+					<Animated.View style={searchBarAnimatedStyle}>
+						{isSearchBarVisible && (
+							<GooglePlacesAutocomplete
+								placeholder="Search for a location..."
+								onPress={(data, details = null) => {
+									setPin({
+										latitude: details?.geometry?.location?.lat,
+										latitudeDelta: latDelta,
+										longitude: details?.geometry?.location?.lng,
+										longitudeDelta: longDelta,
+									});
+									setCurrentPlace(details);
+									moveToLocation(
+										details?.geometry?.location?.lat,
+										details?.geometry?.location?.lng
+									);
+									this._panel.show();
+								}}
+								query={{
+									key: GOOGLE_IOS_API_KEY,
+									language: 'en',
+									components: 'country:sg',
+								}}
+								enablePoweredByContainer={false}
+								fetchDetails={true}
+							/>
+						)}
+					</Animated.View>
 					<View style={{ alignItems: 'flex-end', marginVertical: 10 }}>
 						<ActionButton
 							iconType={Icons.MaterialIcons}
@@ -773,6 +728,27 @@ const Map = () => {
 							/>
 						)}
 					</View>
+				</Animated.View>
+				<Animated.View style={cardViewAnimatedStyle}>
+					{isCardViewVisible && (
+						<View style={styles.cardView}>
+							<View
+								style={[
+									styles.shadow,
+									{
+										borderRadius: 5,
+										backgroundColor: COLORS.white,
+										paddingVertical: 10,
+										paddingHorizontal: 20,
+									},
+								]}>
+								<Text style={styles.cardTitle}>Arrive By</Text>
+								<Text style={styles.cardTime}>
+									{arrivalTime.toLocaleTimeString('en-US', displayOptions)}
+								</Text>
+							</View>
+						</View>
+					)}
 				</Animated.View>
 			</SafeAreaView>
 			<FloatingActionMenu />
@@ -858,7 +834,7 @@ const styles = StyleSheet.create({
 		paddingVertical: 10,
 	},
 	cardView: {
-		top: 20,
+		top: -50,
 		width: '100%',
 		alignItems: 'center',
 		justifyContent: 'center',
@@ -891,7 +867,7 @@ const styles = StyleSheet.create({
 		textAlign: 'left',
 	},
 	timeRemaining: {
-		paddingTop: 20,
+		paddingTop: 10,
 		fontSize: 30,
 		fontWeight: 'bold',
 		color: COLORS.black,
