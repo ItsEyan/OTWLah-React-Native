@@ -11,6 +11,7 @@ const COLORS = {
 	darkGrey: '#565656',
 	pink: '#D01AE1',
 	exitRed: '#D11A2A',
+	darkBlue: '#113CCF',
 
 	//primary: '#637aff',
 	// primaryDark: '#2759ff',

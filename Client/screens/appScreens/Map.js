@@ -1,4 +1,5 @@
 import { GOOGLE_IOS_API_KEY } from '@env';
+import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import * as Location from 'expo-location';
 import React, { useEffect, useRef, useState } from 'react';
@@ -40,6 +41,7 @@ const Map = () => {
 	const latDelta = 0.008;
 	const longDelta = 0.008;
 	const polyline = require('@mapbox/polyline');
+	const navigation = useNavigation();
 
 	const [pin, setPin] = useState({
 		latitude: 1.29027,
@@ -401,7 +403,7 @@ const Map = () => {
 	let resendTimerInterval;
 
 	const triggerTimer = (time) => {
-		setTimeLeft(null);
+		calculateTimeLeft(time);
 		resendTimerInterval = setInterval(() => calculateTimeLeft(time), 1000);
 	};
 
@@ -542,7 +544,7 @@ const Map = () => {
 							await getRoute(userLocation, currentPlace?.geometry?.location);
 							setPanelMinHeight(screenHeight / 5);
 							setPanelMaxHeight(screenHeight / 1.5);
-							this._panel.show(screenHeight / 4);
+							this._panel.show(screenHeight / 5);
 						}}
 					/>
 				</View>
@@ -757,7 +759,9 @@ const Map = () => {
 							<ActionButton
 								iconType={Icons.Ionicons}
 								iconName="ios-person-add-sharp"
-								onPress={() => {}}
+								onPress={() => {
+									navigation.navigate('PartyInfo');
+								}}
 								buttonStyle={{
 									backgroundColor: COLORS.white,
 								}}

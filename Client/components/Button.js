@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import COLORS from '../constants/colors';
+import Icon from './Icons';
 
 const Button = (props) => {
 	const filledBgColor = props.color || COLORS.primary;
@@ -17,9 +18,18 @@ const Button = (props) => {
 			]}
 			disabled={props.disabled}
 			onPress={props.onPress}>
-			<Text style={[{ fontSize: 18 }, { color: textColor }]}>
-				{props.title}
-			</Text>
+			<View style={{ flexDirection: 'row' }}>
+				{props.icon && (
+					<Icon
+						type={props.icon.iconType}
+						name={props.icon.iconName}
+						size={props.icon.iconSize}
+						color={props.icon.iconColor}
+						style={props.icon.iconStyle}
+					/>
+				)}
+				<Text style={[{ fontSize: 18, color: textColor }]}>{props.title}</Text>
+			</View>
 		</TouchableOpacity>
 	);
 };
