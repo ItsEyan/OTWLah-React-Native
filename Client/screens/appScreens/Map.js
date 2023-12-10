@@ -1,8 +1,20 @@
 import { GOOGLE_IOS_API_KEY } from '@env';
-import { useNavigation } from '@react-navigation/native';
+import {
+	useIsFocused,
+	useNavigation,
+	useRoute,
+} from '@react-navigation/native';
 import axios from 'axios';
 import * as Location from 'expo-location';
-import React, { useEffect, useRef, useState } from 'react';
+import {
+	collection,
+	collectionGroup,
+	doc,
+	getDocs,
+	query,
+	setDoc,
+} from 'firebase/firestore';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import {
 	Dimensions,
 	FlatList,
@@ -12,6 +24,7 @@ import {
 	StyleSheet,
 	Text,
 	TouchableOpacity,
+	Vibration,
 	View,
 } from 'react-native';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
@@ -29,12 +42,18 @@ import Animated, {
 	withTiming,
 } from 'react-native-reanimated';
 import SlidingUpPanel from 'rn-sliding-up-panel';
+import { io } from 'socket.io-client';
+import { FIREBASE_DB } from '../../FirebaseConfig';
 import Button from '../../components/Button';
 import CurrentLocationIcon from '../../components/CurrentLocationIcon';
 import ActionButton from '../../components/FloatingActionButton';
 import FloatingActionMenu from '../../components/FloatingActionMenu';
-import { Icons } from '../../components/Icons';
+import Icon, { Icons } from '../../components/Icons';
+import Member from '../../components/Member';
 import COLORS from '../../constants/colors';
+import { baseAPIUrl } from '../../constants/sharedVariables';
+import { SignInContext } from '../../contexts/authContext';
+import { User } from '../../entity/User';
 
 const Map = () => {
 	const mapRef = useRef(null);
@@ -42,6 +61,13 @@ const Map = () => {
 	const longDelta = 0.008;
 	const polyline = require('@mapbox/polyline');
 	const navigation = useNavigation();
+	const route = useRoute();
+	const famRef = useRef();
+	const { signedIn } = useContext(SignInContext);
+
+	// party
+	const [partyID, setPartyID] = useState(null);
+	const [members, setMembers] = useState([]);
 
 	const [pin, setPin] = useState({
 		latitude: 1.29027,
@@ -56,29 +82,46 @@ const Map = () => {
 	const [directions, setDirections] = useState(null);
 	const [departureTime, setDepartureTime] = useState(null);
 	const [timeLeft, setTimeLeft] = useState(null);
+	const isFocused = useIsFocused();
 
 	const [canPanelDrag, setCanPanelDrag] = useState(true);
 
+	// db
+	const db = FIREBASE_DB;
+
+	// socket
+	const socket = io(baseAPIUrl, {
+		query: {
+			userId: signedIn.userUID,
+		},
+	});
+	socket.on('notification', async (partyID) => {
+		console.log('notification from ' + partyID);
+		Vibration.vibrate(100);
+	});
+
 	// animations
-	const [isSearchBarVisible, setSearchBarVisible] = useState(true);
 	const [isCardViewVisible, setCardViewVisible] = useState(false);
 
 	const searchBarFadeInOpacity = useSharedValue(0);
-	const searchBarYValue = useSharedValue(0);
 	const cardViewFadeInOpacity = useSharedValue(1);
 	const translationYValue = useSharedValue(0);
 
-	const locationMoveDown = () => {
+	const translateDown = () => {
 		translationYValue.value = withTiming(0, {
 			duration: 500,
 			easing: Easing.linear,
+			useNativeDriver: true,
+			isInteraction: false,
 		});
 	};
 
-	const locationMoveUp = () => {
+	const translateUp = () => {
 		translationYValue.value = withTiming(-50, {
 			duration: 300,
 			easing: Easing.linear,
+			useNativeDriver: true,
+			isInteraction: false,
 		});
 	};
 
@@ -86,6 +129,8 @@ const Map = () => {
 		searchBarFadeInOpacity.value = withTiming(1, {
 			duration: 500,
 			easing: Easing.linear,
+			useNativeDriver: true,
+			isInteraction: false,
 		});
 	};
 
@@ -93,6 +138,8 @@ const Map = () => {
 		searchBarFadeInOpacity.value = withTiming(0, {
 			duration: 200,
 			easing: Easing.linear,
+			useNativeDriver: true,
+			isInteraction: false,
 		});
 	};
 
@@ -101,6 +148,8 @@ const Map = () => {
 		cardViewFadeInOpacity.value = withTiming(1, {
 			duration: 500,
 			easing: Easing.linear,
+			useNativeDriver: true,
+			isInteraction: false,
 		});
 	};
 
@@ -110,6 +159,8 @@ const Map = () => {
 			{
 				duration: 200,
 				easing: Easing.linear,
+				useNativeDriver: true,
+				isInteraction: false,
 			},
 			(isFinished) => {
 				if (isFinished) runOnJS(setCardViewVisible)(false);
@@ -138,14 +189,30 @@ const Map = () => {
 	useEffect(() => {
 		if (step === 'travelling') {
 			searchBarFadeOut();
-			locationMoveUp();
+			translateUp();
 			cardViewFadeIn();
-		} else {
-			locationMoveDown();
+		} else if (!isCardViewVisible && step === 'party') {
+			searchBarFadeOut();
+			translateUp();
+			cardViewFadeIn();
+		} else if (step === 'selecting') {
+			translateDown();
 			cardViewFadeOut();
 			searchBarFadeIn();
 		}
-	}, [step]);
+
+		if (isFocused) {
+			if (route.params?.partyID && step !== 'party') {
+				joinParty();
+			}
+		}
+	}, [step, isFocused]);
+
+	useEffect(() => {
+		Keyboard.addListener('keyboardDidShow', () => {
+			famRef.current.close();
+		});
+	}, []);
 
 	// date picker
 	const [arrivalTime, setArrivalTime] = useState(new Date());
@@ -250,6 +317,7 @@ const Map = () => {
 	};
 
 	const getUserLocation = async () => {
+		famRef.current.close();
 		let { status } = await Location.requestForegroundPermissionsAsync();
 
 		if (status !== 'granted') {
@@ -268,8 +336,13 @@ const Map = () => {
 		);
 	};
 
-	const getRoute = async (originLoc, destinationLoc) => {
+	const getRoute = async (
+		originLoc,
+		destinationLoc,
+		arrival_time = arrivalTime
+	) => {
 		const url = 'https://maps.googleapis.com/maps/api/directions/json?';
+		let newDepartureTime;
 		try {
 			await axios
 				.get(url, {
@@ -277,7 +350,7 @@ const Map = () => {
 						destination: `${destinationLoc.lat},${destinationLoc.lng}`,
 						origin: `${originLoc.coords.latitude},${originLoc.coords.longitude}`,
 						mode: 'transit',
-						arrival_time: Math.round(arrivalTime.getTime() / 1000),
+						arrival_time: Math.round(arrival_time.getTime() / 1000),
 						key: GOOGLE_IOS_API_KEY,
 					},
 				})
@@ -311,24 +384,21 @@ const Map = () => {
 
 					// get departure time
 					if (response.data?.routes[0]?.legs[0]?.departure_time) {
-						setDepartureTime(
-							new Date(
-								response.data?.routes[0]?.legs[0]?.departure_time.value * 1000
-							)
+						newDepartureTime = new Date(
+							response.data?.routes[0]?.legs[0]?.departure_time.value * 1000
 						);
 					} else {
-						setDepartureTime(
-							getDepartureTime(
-								response.data?.routes[0]?.legs[0]?.duration.value
-							)
+						newDepartureTime = getDepartureTime(
+							response.data?.routes[0]?.legs[0]?.duration.value
 						);
 					}
-
+					setDepartureTime(newDepartureTime);
 					mapRef.current.animateToRegion(findZoomCoords(coords), 1000);
 				});
 		} catch (error) {
 			console.log(error);
 		}
+		return newDepartureTime;
 	};
 
 	const getDepartureTime = (length) => {
@@ -434,13 +504,19 @@ const Map = () => {
 	}
 
 	const panelHidden = (value) => {
-		if (value === 0 && currentPlace && step !== 'travelling') {
+		if (
+			value === 0 &&
+			currentPlace &&
+			(step === 'selecting' || step === 'settime')
+		) {
 			setStep('selecting');
 			setArrivalTime(new Date());
 			setCurrentPlace(null);
 			setPanelMaxHeight(screenHeight / 3.1);
 		}
 	};
+
+	// panel contents
 
 	const locationPanelContent = () => {
 		return (
@@ -517,6 +593,7 @@ const Map = () => {
 						color={COLORS.primary}
 						onPress={async () => {
 							setStep('travelling');
+							famRef.current.close();
 							await getRoute(userLocation, currentPlace?.geometry?.location);
 							setPanelMinHeight(screenHeight / 5);
 							setPanelMaxHeight(screenHeight / 1.5);
@@ -526,6 +603,102 @@ const Map = () => {
 				</View>
 			</View>
 		);
+	};
+
+	const directionsComponent = (height) => {
+		return (
+			<View style={{ marginTop: 30 }}>
+				<FlatList
+					style={{ height: height }}
+					data={directions}
+					onTouchStart={() => setCanPanelDrag(false)}
+					onTouchEnd={() => setCanPanelDrag(true)}
+					onTouchCancel={() => setCanPanelDrag(true)}
+					keyExtractor={(item, index) => index.toString()}
+					ItemSeparatorComponent={() => {
+						return <View style={styles.panelSeparator} />;
+					}}
+					renderItem={({ item }) => (
+						<View>
+							<View
+								style={{
+									flexDirection: 'row',
+									justifyContent: 'space-between',
+									paddingVertical: 10,
+									paddingHorizontal: 10,
+								}}>
+								<View
+									style={{
+										flexDirection: 'row',
+										alignItems: 'center',
+									}}>
+									{item.type === 'Walk' ? (
+										<Icon
+											type={Icons.MaterialIcons}
+											name="directions-walk"
+											color={COLORS.primary}
+										/>
+									) : item.type === 'Bus' ? (
+										<Icon
+											type={Icons.FontAwesome5}
+											name="bus-alt"
+											color={COLORS.yellow}
+										/>
+									) : item.type === 'MRT' ? (
+										<Icon
+											type={Icons.Ionicons}
+											name="subway"
+											color={COLORS.emeraldGreen}
+										/>
+									) : null}
+									<Text
+										style={{
+											fontWeight: 'bold',
+											fontSize: 20,
+											marginLeft: 10,
+										}}>
+										{item.type}
+									</Text>
+								</View>
+								<View style={{ flexDirection: 'row' }}>
+									<Text style={{ textAlign: 'right', fontWeight: 'bold' }}>
+										{item.duration.text}
+									</Text>
+									<Text style={{ textAlign: 'right' }}>
+										{' '}
+										({item.distance.text})
+									</Text>
+								</View>
+							</View>
+							<View>
+								<Text style={{ paddingHorizontal: 10 }}>
+									{item.instructions}
+								</Text>
+							</View>
+						</View>
+					)}
+				/>
+			</View>
+		);
+	};
+
+	const returnToDestinationSelection = () => {
+		setPanelMinHeight(0);
+		setPanelMaxHeight(screenHeight / 3.1);
+		setTimeout(() => {
+			this._panel.hide();
+		}, 10);
+		setTimeout(() => {
+			setStep('selecting');
+			setRouteCoords(null);
+			setArrivalTime(new Date());
+			setCurrentPlace(null);
+			setDepartureTime(null);
+			setDirections(null);
+			setTimeLeft(null);
+			setPartyID(null);
+			setMembers([]);
+		}, 500);
 	};
 
 	const setTravellingPanelContent = () => {
@@ -540,22 +713,7 @@ const Map = () => {
 						title="Cancel"
 						filled={true}
 						color={COLORS.exitRed}
-						onPress={() => {
-							setPanelMinHeight(0);
-							setPanelMaxHeight(screenHeight / 3.1);
-							setTimeout(() => {
-								this._panel.hide();
-							}, 10);
-							setTimeout(() => {
-								setStep('selecting');
-								setRouteCoords(null);
-								setArrivalTime(new Date());
-								setCurrentPlace(null);
-								setDepartureTime(null);
-								setDirections(null);
-								setTimeLeft(null);
-							}, 500);
-						}}
+						onPress={returnToDestinationSelection}
 						style={{ paddingHorizontal: 30, marginTop: 10, height: 55 }}
 					/>
 				</View>
@@ -565,58 +723,277 @@ const Map = () => {
 						{ marginHorizontal: -20, marginTop: 25 },
 					]}
 				/>
-				<View style={{ marginTop: 30 }}>
-					<FlatList
-						style={{ height: 320 }}
-						data={directions}
-						onTouchStart={() => setCanPanelDrag(false)}
-						onTouchEnd={() => setCanPanelDrag(true)}
-						onTouchCancel={() => setCanPanelDrag(true)}
-						keyExtractor={(item, index) => index.toString()}
-						ItemSeparatorComponent={() => {
-							return <View style={styles.panelSeparator} />;
-						}}
-						renderItem={({ item }) => (
-							<View>
-								<View
-									style={{
-										flexDirection: 'row',
-										justifyContent: 'space-between',
-										paddingVertical: 10,
-										paddingHorizontal: 10,
-									}}>
-									<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-										<View
-											style={{
-												width: 20,
-												height: 20,
-												borderRadius: 10,
-												backgroundColor: COLORS.primary,
-												marginRight: 10,
-											}}
-										/>
-										<Text style={{ fontWeight: 'bold', fontSize: 20 }}>
-											{item.type}
-										</Text>
-									</View>
-									<View style={{ flexDirection: 'row' }}>
-										<Text style={{ textAlign: 'right', fontWeight: 'bold' }}>
-											{item.duration.text}
-										</Text>
-										<Text style={{ textAlign: 'right' }}>
-											{' '}
-											({item.distance.text})
-										</Text>
-									</View>
-								</View>
-								<View>
-									<Text style={{ paddingHorizontal: 10 }}>
-										{item.instructions}
-									</Text>
-								</View>
-							</View>
-						)}
+				{directionsComponent(320)}
+			</View>
+		);
+	};
+
+	const clearParams = () => {
+		navigation.setParams({
+			partyID: null,
+			destination: null,
+			arrivalTime: null,
+		});
+	};
+
+	const joinParty = async () => {
+		try {
+			famRef.current.close();
+			searchBarFadeOut();
+			translateUp();
+			cardViewFadeIn();
+			setCurrentPlace({
+				name: route.params.destination.name,
+				formatted_address: route.params.destination.address,
+				geometry: {
+					location: {
+						lat: route.params.destination.lat,
+						lng: route.params.destination.lng,
+					},
+				},
+			});
+			setPin({
+				latitude: route.params.destination.lat,
+				latitudeDelta: latDelta,
+				longitude: route.params.destination.lng,
+				longitudeDelta: longDelta,
+			});
+			setArrivalTime(new Date(route.params.arrivalTime));
+			setPartyID(route.params.partyID);
+
+			let newDepartureTime = await getRoute(
+				userLocation,
+				{
+					lat: route.params.destination.lat,
+					lng: route.params.destination.lng,
+				},
+				new Date(route.params.arrivalTime)
+			);
+
+			await setDoc(
+				doc(
+					db,
+					'parties',
+					route.params.partyID.toString(),
+					'members',
+					signedIn.userUID
+				),
+				{ departureTime: newDepartureTime.getTime() },
+				{ merge: true }
+			);
+
+			const q = query(collectionGroup(db, 'members'));
+			const querySnapshot = await getDocs(q);
+			let newMembers = [];
+			querySnapshot.forEach((doc) => {
+				if (doc.data().partyID == route.params.partyID) {
+					newMembers.push(
+						new User(
+							doc.id,
+							doc.data().username,
+							doc.data().avatar,
+							new Date(doc.data().departureTime),
+							doc.data().currentLocation,
+							doc.data().isLeader
+						)
+					);
+				}
+			});
+			setMembers(newMembers, setStep('party'));
+
+			socket.emit('joinParty', route.params.partyID, {
+				uid: signedIn.userUID,
+				username: signedIn.userDisplayName,
+				avatar: signedIn.userPhotoURL,
+				lat: userLocation?.coords?.latitude,
+				lng: userLocation?.coords?.longitude,
+				departureTime: newDepartureTime.getTime(),
+			});
+			socket.on(route.params.partyID, (data) => {
+				let isInside = false;
+				let currentMembers = members.length > 0 ? members : newMembers;
+				currentMembers.forEach((member) => {
+					if (data.username === member.name) {
+						isInside = true;
+					}
+				});
+				if (!isInside) {
+					setMembers((currentMembers) => [
+						...currentMembers,
+						new User(
+							data.uid,
+							data.username,
+							data.avatar,
+							new Date(data.departureTime),
+							data.userLocation,
+							false
+						),
+					]);
+				}
+			});
+
+			clearParams();
+
+			setPanelMinHeight(screenHeight / 4);
+			setPanelMaxHeight(screenHeight / 1.3);
+			this._panel.show(screenHeight / 4);
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	const openJoinParty = () => {
+		navigation.navigate('JoinParty', {
+			userLocation: userLocation,
+		});
+	};
+
+	const createParty = async () => {
+		let newPartyID;
+		famRef.current.close();
+		if (partyID === null) {
+			try {
+				const q = query(collection(db, 'parties'));
+				const querySnapshot = await getDocs(q);
+				setPartyID(querySnapshot.size + 1);
+				newPartyID = querySnapshot.size + 1;
+				await setDoc(doc(db, 'parties', (querySnapshot.size + 1).toString()), {
+					arrivalTime: arrivalTime.getTime(),
+					destination: {
+						name: currentPlace?.name,
+						address: currentPlace?.formatted_address,
+						lat: currentPlace?.geometry?.location?.lat,
+						lng: currentPlace?.geometry?.location?.lng,
+					},
+					createdAt: Date.now(),
+				});
+				await setDoc(
+					doc(
+						db,
+						'parties',
+						(querySnapshot.size + 1).toString(),
+						'members',
+						signedIn.userUID
+					),
+					{
+						joinedAt: Date.now(),
+						departureTime: departureTime.getTime(),
+						username: signedIn.userDisplayName,
+						avatar: signedIn.userPhotoURL,
+						isLeader: true,
+						arrivalTime: arrivalTime.getTime(),
+						destination: {
+							name: currentPlace?.name,
+							address: currentPlace?.formatted_address,
+							lat: currentPlace?.geometry?.location?.lat,
+							lng: currentPlace?.geometry?.location?.lng,
+						},
+						createdAt: Date.now(),
+						currentLocation: {
+							lat: userLocation?.coords?.latitude,
+							lng: userLocation?.coords?.longitude,
+						},
+						partyID: newPartyID,
+						uid: signedIn.userUID,
+					}
+				);
+				setMembers(
+					(members) => [
+						...members,
+						new User(
+							signedIn.userUID,
+							signedIn.userDisplayName,
+							signedIn.userPhotoURL,
+							departureTime,
+							userLocation?.coords,
+							true
+						),
+					],
+					setStep('party')
+				);
+				setPanelMinHeight(screenHeight / 4);
+				setPanelMaxHeight(screenHeight / 1.3);
+				this._panel.show(screenHeight / 4);
+			} catch (error) {
+				console.log(error);
+			}
+		}
+
+		socket.on(partyID ? partyID : newPartyID, (data) => {
+			let isInside = false;
+			let currentMembers = members;
+			currentMembers.forEach((member) => {
+				if (data.username === member.name) {
+					isInside = true;
+				}
+			});
+			if (!isInside) {
+				setMembers((currentMembers) => [
+					...currentMembers,
+					new User(
+						data.uid,
+						data.username,
+						data.avatar,
+						new Date(data.departureTime),
+						data.userLocation,
+						false
+					),
+				]);
+			}
+		});
+
+		navigation.navigate('PartyInfo', {
+			partyID: partyID ? partyID : newPartyID,
+			destination: {
+				name: currentPlace?.name,
+				address: currentPlace?.formatted_address,
+				lat: currentPlace?.geometry?.location?.lat,
+				lng: currentPlace?.geometry?.location?.lng,
+			},
+		});
+	};
+
+	const setPartyPanelContent = () => {
+		let isLeader = false;
+		members.forEach((member) => {
+			if (member.name === signedIn.userDisplayName && member.isLeader) {
+				isLeader = true;
+			}
+		});
+		return (
+			<View style={styles.panelContainer}>
+				<FlatList
+					data={members}
+					keyExtractor={(item) => item.name}
+					renderItem={(item) => (
+						<Member member={item.item} socket={socket} partyID={partyID} />
+					)}
+					horizontal={true}
+				/>
+				{directionsComponent(320)}
+				<View
+					style={{
+						flexDirection: 'row',
+						justifyContent: 'space-between',
+						marginTop: 20,
+						marginHorizontal: 10,
+					}}>
+					<Button
+						title="Close Party"
+						filled={true}
+						color={COLORS.exitRed}
+						onPress={returnToDestinationSelection}
+						style={{ paddingHorizontal: 30, marginTop: 10, height: 55 }}
 					/>
+					{isLeader && (
+						<Button
+							title="Edit Party"
+							filled={true}
+							color={COLORS.primary}
+							onPress={() => {}}
+							style={{ paddingHorizontal: 30, marginTop: 10, height: 55 }}
+						/>
+					)}
 				</View>
 			</View>
 		);
@@ -670,37 +1047,40 @@ const Map = () => {
 					</MapCallout>
 				</MarkerAnimated>
 			</MapView>
-			<SafeAreaView style={styles.searchContainer}>
-				<Animated.View style={translationAnimationStyle}>
-					<Animated.View style={searchBarAnimatedStyle}>
-						{isSearchBarVisible && (
-							<GooglePlacesAutocomplete
-								placeholder="Search for a location..."
-								onPress={(data, details = null) => {
-									setPin({
-										latitude: details?.geometry?.location?.lat,
-										latitudeDelta: latDelta,
-										longitude: details?.geometry?.location?.lng,
-										longitudeDelta: longDelta,
-									});
-									setCurrentPlace(details);
-									moveToLocation(
-										details?.geometry?.location?.lat,
-										details?.geometry?.location?.lng
-									);
-									this._panel.show();
-								}}
-								query={{
-									key: GOOGLE_IOS_API_KEY,
-									language: 'en',
-									components: 'country:sg',
-								}}
-								enablePoweredByContainer={false}
-								fetchDetails={true}
-							/>
-						)}
+			<SafeAreaView style={[styles.searchContainer]}>
+				<Animated.View style={[translationAnimationStyle]}>
+					<Animated.View style={[searchBarAnimatedStyle]}>
+						<GooglePlacesAutocomplete
+							placeholder="Search for a location..."
+							onPress={(data, details = null) => {
+								setPin({
+									latitude: details?.geometry?.location?.lat,
+									latitudeDelta: latDelta,
+									longitude: details?.geometry?.location?.lng,
+									longitudeDelta: longDelta,
+								});
+								setCurrentPlace(details);
+								moveToLocation(
+									details?.geometry?.location?.lat,
+									details?.geometry?.location?.lng
+								);
+								this._panel.show();
+							}}
+							query={{
+								key: GOOGLE_IOS_API_KEY,
+								language: 'en',
+								components: 'country:sg',
+							}}
+							enablePoweredByContainer={false}
+							fetchDetails={true}
+						/>
 					</Animated.View>
-					<View style={{ alignItems: 'flex-end', marginVertical: 10 }}>
+					<View
+						style={{
+							alignItems: 'flex-end',
+							marginVertical: 10,
+							pointerEvents: 'auto',
+						}}>
 						<ActionButton
 							iconType={Icons.MaterialIcons}
 							iconName="my-location"
@@ -710,13 +1090,11 @@ const Map = () => {
 							fabSize={40}
 							underlayColor={COLORS.gray}
 						/>
-						{step === 'travelling' && (
+						{(step === 'travelling' || step === 'party') && (
 							<ActionButton
 								iconType={Icons.Ionicons}
 								iconName="ios-person-add-sharp"
-								onPress={() => {
-									navigation.navigate('PartyInfo');
-								}}
+								onPress={createParty}
 								buttonStyle={{
 									backgroundColor: COLORS.white,
 								}}
@@ -751,7 +1129,7 @@ const Map = () => {
 					)}
 				</Animated.View>
 			</SafeAreaView>
-			<FloatingActionMenu />
+			<FloatingActionMenu openJoinParty={openJoinParty} ref={famRef} />
 			<SlidingUpPanel
 				ref={(c) => (this._panel = c)}
 				draggableRange={{ top: panelMaxHeight, bottom: panelMinHeight }}
@@ -766,6 +1144,7 @@ const Map = () => {
 					{step === 'selecting' && locationPanelContent()}
 					{step === 'settime' && setTimePanelContent()}
 					{step === 'travelling' && setTravellingPanelContent()}
+					{step === 'party' && setPartyPanelContent()}
 				</View>
 			</SlidingUpPanel>
 		</View>
@@ -840,6 +1219,7 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		position: 'absolute',
 		opacity: 0.9,
+		pointerEvents: 'none',
 	},
 	cardTitle: {
 		fontSize: 20,

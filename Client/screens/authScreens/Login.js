@@ -3,8 +3,7 @@ import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import React, { useContext, useState } from 'react';
-import { SignInContext } from '../../contexts/authContext';
+import React, { useState } from 'react';
 
 import {
 	Dimensions,
@@ -46,8 +45,6 @@ const Login = () => {
 	const [forgotPasswordSelected, setForgotPasswordSelected] = useState(false);
 	const [registerSelected, setRegisterSelected] = useState(false);
 	const navigation = useNavigation();
-
-	const { dispatchSignedIn } = useContext(SignInContext);
 
 	const auth = getAuth();
 	const db = FIREBASE_DB;
@@ -296,6 +293,7 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		paddingHorizontal: 22,
+		height: '100%',
 	},
 	header: {
 		marginVertical: 22,

@@ -16,12 +16,12 @@ export const SignInContextProvider = (props) => {
 	const auth = getAuth();
 
 	useEffect(() => {
-		onAuthStateChanged(auth, (user) => {
+		onAuthStateChanged(auth, async (user) => {
 			if (user) {
 				setLoading(false);
 				dispatchSignedIn({
 					type: 'UPDATE_SIGN_IN',
-					payload: { userToken: 'signed-in' },
+					payload: { userToken: 'signed-in', ...user },
 				});
 			} else {
 				setLoading(false);

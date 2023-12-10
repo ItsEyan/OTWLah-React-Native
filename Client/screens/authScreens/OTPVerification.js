@@ -4,10 +4,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import {
 	createUserWithEmailAndPassword,
 	getAuth,
+	reload,
 	signInWithEmailAndPassword,
+	updateProfile,
 } from 'firebase/auth';
 import { deleteDoc, doc, setDoc } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react';
+import { getDownloadURL, getStorage, ref } from 'firebase/storage';
+import React, { useContext, useEffect, useState } from 'react';
 import {
 	Image,
 	Keyboard,
@@ -24,6 +27,7 @@ import ResendTimer from '../../components/ResendTimer';
 import VerificationModal from '../../components/VerificationModal';
 import COLORS from '../../constants/colors';
 import { baseAPIUrl } from '../../constants/sharedVariables';
+import { SignInContext } from '../../contexts/authContext';
 
 const OTPVerification = () => {
 	const {
@@ -39,12 +43,14 @@ const OTPVerification = () => {
 
 	const navigation = useNavigation();
 	const route = useRoute();
+	const storage = getStorage();
+
+	const { dispatchSignedIn } = useContext(SignInContext);
 
 	//data
 	const email = route.params.email;
 	const username = route.params.username;
 	const password = route.params.password;
-	const { dispatchSignedIn } = useContext(SignInContext);
 
 	//firebase
 	const auth = getAuth();
@@ -156,21 +162,49 @@ const OTPVerification = () => {
 	};
 
 	const registerUser = async () => {
-		const response = await createUserWithEmailAndPassword(
-			auth,
-			email,
-			password
-		);
-		const user = response.user;
+		try {
+			const response = await createUserWithEmailAndPassword(
+				auth,
+				email,
+				password
+			);
+			const user = response.user;
 
-		await setDoc(doc(db, 'User', user.uid), {
-			username: username,
-			lowercase_username: username.toLowerCase(),
-			email: email.toLowerCase(),
-		});
-		await deleteDoc(doc(db, 'otp_verification', email));
+			await updateProfile(user, {
+				displayName: username,
+			});
 
-		signInWithEmailAndPassword(auth, email, password);
+			let photo;
+
+			const reference = ref(storage, '/default_profile_picture.png');
+			await getDownloadURL(reference).then((url) => {
+				photo = url;
+				updateProfile(user, {
+					photoURL: url,
+				});
+			});
+			await reload(user).then(() => {
+				dispatchSignedIn({
+					type: 'NEW_USER',
+					payload: {
+						userToken: 'signed-in',
+						displayName: username,
+						photoURL: photo,
+						uid: auth.currentUser.uid,
+						email: auth.currentUser.email,
+					},
+				});
+			});
+
+			await setDoc(doc(db, 'User', user.uid), {
+				username: username,
+				lowercase_username: username.toLowerCase(),
+				email: email.toLowerCase(),
+			});
+			await deleteDoc(doc(db, 'otp_verification', email));
+		} catch (error) {
+			console.log(error);
+		}
 	};
 
 	const persistLoginAfterOTPVerification = async () => {
@@ -179,6 +213,7 @@ const OTPVerification = () => {
 				email: email,
 			});
 		} else {
+			signInWithEmailAndPassword(auth, email, password);
 			dispatchSignedIn({
 				type: 'UDATE_SIGN_IN',
 				payload: { userToken: 'signed-in' },

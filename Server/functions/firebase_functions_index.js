@@ -1,29 +1,28 @@
 require('dotenv').config();
 
+const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+admin.initializeApp(functions.config().firebase);
 
+const db = admin.firestore();
 const saltRounds = 10;
 
 const serviceAccount = require('./otwlah_permissions.json');
-admin.initializeApp({
-	credential: admin.credential.cert(serviceAccount),
-	databaseURL:
-		'https://otwlah-default-rtdb.asia-southeast1.firebasedatabase.app',
-});
-
-const db = admin.firestore();
-
 const nodeMailer = require('nodemailer');
 const bCrypt = require('bcryptjs');
+if (!admin.apps.length) {
+	admin.initializeApp({
+		credential: admin.credential.cert(serviceAccount),
+		databaseURL:
+			'https://otwlah-default-rtdb.asia-southeast1.firebasedatabase.app',
+	});
+}
 
 const express = require('express');
 const app = express();
-const port = 3000;
 
 const cors = require('cors');
-
-const sessionsMap = {};
-
+const { getAuth } = require('firebase-admin/auth');
 app.use(cors({ origin: true, credentials: true }));
 app.use(function (req, res, next) {
 	res.setHeader('Access-Control-Allow-Origin', '*');
@@ -40,27 +39,6 @@ app.use(function (req, res, next) {
 		return res.status(200).end();
 	}
 	next();
-});
-
-const server = app.listen(port);
-const io = require('socket.io')().listen(server);
-
-//socket
-io.on('connection', (socket) => {
-	const userId = socket.handshake.query['userId'];
-	sessionsMap[userId] = socket.id;
-
-	socket.on('joinParty', (partyID, user) => {
-		console.log(partyID);
-		socket.join(partyID);
-		io.sockets.emit(partyID, user);
-	});
-
-	socket.on('notification', (partyID, uid) => {
-		io.to(sessionsMap[uid]).emit('notification', partyID);
-	});
-
-	socket.on('disconnect', () => {});
 });
 
 //nodemailer
@@ -161,7 +139,7 @@ app.get('/verifyOTP', async (req, res) => {
 				throw new Error('OTP has expired. Please request a new one.');
 			}
 
-			const isOTPValid = bCrypt.compare(otp, otpDoc.otp);
+			const isOTPValid = await bCrypt.compare(otp, otpDoc.otp);
 
 			if (isOTPValid) {
 				res.json({
@@ -209,67 +187,6 @@ app.get('/resetPassword', async (req, res) => {
 	}
 });
 
-// Join Party
-app.get('/joinParty', async (req, res) => {
-	let doc;
-	try {
-		const { partyID, userID, username, avatar, lat, lng } = req.query;
-		const docRef = db.collection('parties').doc(partyID.toString());
-		doc = await docRef.get();
+exports.app = functions.region('asia-southeast1').https.onRequest(app);
 
-		if (!doc.exists) {
-			throw new Error('Party does not exist');
-		} else {
-			const partyRef = db
-				.collection('parties')
-				.doc(partyID.toString())
-				.collection('members')
-				.doc(userID);
-			await partyRef.create({
-				username: username,
-				joinedAt: Date.now(),
-				isLeader: false,
-				avatar: avatar,
-				destination: {
-					name: doc.data().destination.name,
-					address: doc.data().destination.address,
-					latitude: doc.data().destination.lat,
-					longitude: doc.data().destination.lng,
-				},
-				createdAt: doc.data().createdAt,
-				arrivalTime: doc.data().arrivalTime,
-				currentLocation: {
-					lat: lat,
-					lng: lng,
-				},
-				partyID: partyID,
-				uid: userID,
-			});
-
-			res.json({
-				status: 'SUCCESS',
-				message: 'Party joined successfully',
-				data: {
-					destination: doc.data().destination,
-					arrivalTime: doc.data().arrivalTime,
-				},
-			});
-		}
-	} catch (error) {
-		if (error.message.startsWith('6 ALREADY_EXISTS')) {
-			res.json({
-				status: 'SUCCESS',
-				message: 'You are already in this party',
-				data: {
-					destination: doc.data().destination,
-					arrivalTime: doc.data().arrivalTime,
-				},
-			});
-		} else {
-			res.json({
-				status: 'FAILED',
-				message: error.message,
-			});
-		}
-	}
-});
+// run using firebase serve -o 192.168.18.9

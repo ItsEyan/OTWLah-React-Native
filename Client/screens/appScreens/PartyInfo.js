@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
@@ -17,6 +17,14 @@ import COLORS from '../../constants/colors';
 const PartyInfo = () => {
 	let logoImage = require('../../assets/OTWLahLogo.png');
 	const navigation = useNavigation();
+	const route = useRoute();
+	const partyID = route.params.partyID;
+	const destination = route.params.destination;
+
+	const code1 = Math.floor(partyID / 1000);
+	const code2 = Math.floor((partyID % 1000) / 100);
+	const code3 = Math.floor((partyID % 100) / 10);
+	const code4 = Math.floor(partyID % 10);
 
 	const onShare = async () => {
 		try {
@@ -43,7 +51,7 @@ const PartyInfo = () => {
 			<View
 				style={{
 					position: 'absolute',
-					paddingTop: 85,
+					paddingTop: 75,
 					paddingLeft: 30,
 					zIndex: 1,
 				}}>
@@ -70,7 +78,12 @@ const PartyInfo = () => {
 						borderBlockColor: COLORS.black,
 						padding: 20,
 					}}>
-					<QRCode value="1234" logo={logoImage} logoSize={50} size={250} />
+					<QRCode
+						value={partyID.toString()}
+						logo={logoImage}
+						logoSize={50}
+						size={250}
+					/>
 				</LinearGradient>
 			</View>
 			<Text
@@ -88,16 +101,16 @@ const PartyInfo = () => {
 				]}>
 				<View style={{ flexDirection: 'row' }}>
 					<View style={[styles.codeBox, styles.shadow]}>
-						<Text style={styles.code}>1</Text>
+						<Text style={styles.code}>{code1}</Text>
 					</View>
 					<View style={[styles.codeBox, styles.shadow]}>
-						<Text style={styles.code}>1</Text>
+						<Text style={styles.code}>{code2}</Text>
 					</View>
 					<View style={[styles.codeBox, styles.shadow]}>
-						<Text style={styles.code}>1</Text>
+						<Text style={styles.code}>{code3}</Text>
 					</View>
 					<View style={[styles.codeBox, styles.shadow]}>
-						<Text style={styles.code}>1</Text>
+						<Text style={styles.code}>{code4}</Text>
 					</View>
 				</View>
 			</View>

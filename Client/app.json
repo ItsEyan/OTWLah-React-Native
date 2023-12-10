@@ -45,6 +45,12 @@
 				{
 					"locationAlwaysAndWhenInUsePermission": "Allow OTWLah to use your location."
 				}
+			],
+			[
+				"expo-image-picker",
+				{
+					"photosPermission": "The app accesses your photos to set your profile picture"
+				}
 			]
 		]
 	}

@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useReducer } from 'react';
+import React, { forwardRef, useImperativeHandle, useReducer } from 'react';
 import {
 	Dimensions,
 	StyleSheet,
@@ -27,10 +27,19 @@ const circleSize = circleScale * FAB_SIZE;
 const dist = circleSize / 2 - FAB_SIZE;
 const middleDist = dist / 1.41;
 
-export default function FloatingActionMenu() {
+const FloatingActionMenu = ({ openJoinParty }, ref) => {
+	useImperativeHandle(ref, () => ({
+		close: () => {
+			close();
+		},
+	}));
 	const [open, toggle] = useReducer((s) => !s, false);
 
 	const navigation = useNavigation();
+
+	const close = () => {
+		if (open) toggle();
+	};
 
 	const rotation = useDerivedValue(() => {
 		return withTiming(open ? '0deg' : '135deg');
@@ -92,7 +101,7 @@ export default function FloatingActionMenu() {
 		});
 
 	const openSettings = () => {
-		toggle();
+		close();
 		navigation.navigate('Settings');
 	};
 
@@ -114,11 +123,20 @@ export default function FloatingActionMenu() {
 					style={translationStyles(false, true, dist)}
 					iconType={Icons.EvilIcons}
 					iconName="calendar"
+					onPress={() => {
+						close();
+						navigation.navigate('PartyHistory');
+					}}
 				/>
 				<ActionButton
 					style={translationStyles(true, true, middleDist)}
-					iconType={Icons.EvilIcons}
-					iconName="share-google"
+					iconType={Icons.MaterialIcons}
+					iconName="people-alt"
+					iconSize={28}
+					onPress={() => {
+						close();
+						openJoinParty();
+					}}
 				/>
 				<ActionButton
 					style={translationStyles(true, false, dist)}
@@ -129,7 +147,7 @@ export default function FloatingActionMenu() {
 			</View>
 		</View>
 	);
-}
+};
 
 const CircleStyle = {
 	width: FAB_SIZE,
@@ -162,3 +180,5 @@ const styles = StyleSheet.create({
 		zIndex: -1,
 	},
 });
+
+export default forwardRef(FloatingActionMenu);
