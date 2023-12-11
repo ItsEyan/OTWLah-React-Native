@@ -53,7 +53,12 @@ io.on('connection', (socket) => {
 	socket.on('joinParty', (partyID, user) => {
 		console.log(partyID);
 		socket.join(partyID);
-		io.sockets.emit(partyID, user);
+		io.sockets.emit(partyID, user, 'joined');
+	});
+
+	socket.on('leaveParty', (partyID, uid) => {
+		socket.leave(partyID);
+		io.sockets.emit(partyID, uid, 'left');
 	});
 
 	socket.on('notification', (partyID, uid) => {

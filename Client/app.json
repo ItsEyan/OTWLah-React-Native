@@ -16,7 +16,7 @@
 			"supportsTablet": true,
 			"bundleIdentifier": "com.itseyan.OTWLah",
 			"infoPlist": {
-				"NSCameraUsageDescription": "This app uses the camera to scan barcodes on event tickets.",
+				"NSCameraUsageDescription": "This app uses the camera to scan QR Codes to join parties.",
 				"NSAllowsArbitraryLoads": true,
 				"CADisableMinimumFrameDurationOnPhone": true
 			},

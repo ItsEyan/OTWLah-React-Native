@@ -27,7 +27,7 @@ const circleSize = circleScale * FAB_SIZE;
 const dist = circleSize / 2 - FAB_SIZE;
 const middleDist = dist / 1.41;
 
-const FloatingActionMenu = ({ openJoinParty }, ref) => {
+const FloatingActionMenu = ({ openJoinParty, openPartyHistory }, ref) => {
 	useImperativeHandle(ref, () => ({
 		close: () => {
 			close();
@@ -121,11 +121,12 @@ const FloatingActionMenu = ({ openJoinParty }, ref) => {
 				</TouchableWithoutFeedback>
 				<ActionButton
 					style={translationStyles(false, true, dist)}
-					iconType={Icons.EvilIcons}
-					iconName="calendar"
+					iconType={Icons.FontAwesome5}
+					iconName="history"
+					iconSize={24}
 					onPress={() => {
 						close();
-						navigation.navigate('PartyHistory');
+						openPartyHistory();
 					}}
 				/>
 				<ActionButton

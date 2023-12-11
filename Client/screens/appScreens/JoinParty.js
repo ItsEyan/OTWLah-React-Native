@@ -2,7 +2,15 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useContext, useState } from 'react';
-import { Image, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import {
+	ActivityIndicator,
+	Image,
+	SafeAreaView,
+	StyleSheet,
+	Text,
+	TouchableOpacity,
+	View,
+} from 'react-native';
 import Button from '../../components/Button';
 import CodeInputField from '../../components/CodeInputField';
 import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
@@ -19,6 +27,7 @@ const JoinParty = () => {
 
 	const [code, setCode] = useState('');
 	const [pinReady, setPinReady] = useState(false);
+	const [error, setError] = useState(false);
 
 	//verification button
 	const [fetching, setFetching] = useState(false);
@@ -37,6 +46,7 @@ const JoinParty = () => {
 				},
 			});
 			if (response.data.status === 'SUCCESS') {
+				setError(false);
 				navigation.navigate('Map', {
 					partyID: parseInt(code),
 					destination: response.data.data.destination,
@@ -44,9 +54,11 @@ const JoinParty = () => {
 				});
 			} else {
 				console.log(response.data);
+				setError(true);
 			}
 		} catch (error) {
 			console.error(error);
+			setError(true);
 		}
 		setFetching(false);
 	};
@@ -71,7 +83,6 @@ const JoinParty = () => {
 						<Text style={styles.infoText}>
 							Enter the party code to join the party
 						</Text>
-						<Text style={[styles.infoText, styles.emphasiseText]}></Text>
 
 						<CodeInputField
 							setPinReady={setPinReady}
@@ -79,6 +90,22 @@ const JoinParty = () => {
 							setCode={setCode}
 							maxLength={MAX_CODE_LENGTH}
 						/>
+
+						{fetching && (
+							<View style={{ width: '50%' }}>
+								<TouchableOpacity
+									style={[
+										styles.button,
+										{
+											backgroundColor: COLORS.primary,
+											borderColor: COLORS.primary,
+										},
+									]}
+									disabled={true}>
+									<ActivityIndicator size="small" color={COLORS.white} />
+								</TouchableOpacity>
+							</View>
+						)}
 
 						{!fetching && pinReady && (
 							<View style={{ width: '50%' }}>
@@ -102,8 +129,19 @@ const JoinParty = () => {
 							</View>
 						)}
 
+						<Text
+							style={[
+								styles.infoText,
+								styles.emphasiseText,
+								{
+									color: error ? COLORS.errorRed : COLORS.white,
+									paddingTop: 10,
+								},
+							]}>
+							Invalid Party ID
+						</Text>
 						<View>
-							<Text style={[styles.infoText, { paddingTop: 20 }]}>
+							<Text style={[styles.infoText, { paddingTop: 10 }]}>
 								Don't have a party code?
 							</Text>
 							<Text style={[styles.infoText, { paddingBottom: 20 }]}>
@@ -113,7 +151,11 @@ const JoinParty = () => {
 								title="Scan QR"
 								color={COLORS.darkBlue}
 								filled={true}
-								onPress={() => {}}
+								onPress={() => {
+									navigation.navigate('QRCodeScanner', {
+										userLocation: userLocation,
+									});
+								}}
 							/>
 						</View>
 					</View>
@@ -166,6 +208,13 @@ const styles = StyleSheet.create({
 	emphasiseText: {
 		fontWeight: 'bold',
 		fontStyle: 'italic',
+	},
+	button: {
+		paddingVertical: 13,
+		borderWidth: 2,
+		borderRadius: 12,
+		alignItems: 'center',
+		justifyContent: 'center',
 	},
 });
 

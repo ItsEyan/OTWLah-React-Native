@@ -1,21 +1,50 @@
+import { useNavigation, useRoute } from '@react-navigation/native';
+import axios from 'axios';
 import {
 	collectionGroup,
+	deleteDoc,
+	doc,
 	getDocs,
 	orderBy,
 	query,
 	where,
 } from 'firebase/firestore';
 import React, { useContext, useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import {
+	Alert,
+	SafeAreaView,
+	StyleSheet,
+	Text,
+	TouchableOpacity,
+	View,
+} from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import SectionList from 'react-native-tabs-section-list';
+import { io } from 'socket.io-client';
 import { FIREBASE_DB } from '../../FirebaseConfig';
+import Button from '../../components/Button';
 import COLORS from '../../constants/colors';
+import { baseAPIUrl } from '../../constants/sharedVariables';
 import { SignInContext } from '../../contexts/authContext';
 
 const PartyHistory = () => {
 	const { signedIn } = useContext(SignInContext);
 	const db = FIREBASE_DB;
 	const [parties, setParties] = useState([]);
+	const [fetching, setFetching] = useState(false);
+	const [error, setError] = useState(false);
+	const route = useRoute();
+	const navigation = useNavigation();
+	const userLocation = route.params.userLocation;
+
+	const socket = io(baseAPIUrl, {
+		query: {
+			userId: signedIn.userUID,
+		},
+	});
+
+	let row = [];
+	let prevOpenedRow;
 
 	useEffect(() => {
 		getParties();
@@ -46,6 +75,7 @@ const PartyHistory = () => {
 					address: doc.data().destination.address,
 					arrivalTime: doc.data().arrivalTime,
 					partyID: doc.data().partyID,
+					departureTime: doc.data().departureTime,
 				});
 			} else {
 				joinedParties.push({
@@ -53,6 +83,7 @@ const PartyHistory = () => {
 					address: doc.data().destination.address,
 					arrivalTime: doc.data().arrivalTime,
 					partyID: doc.data().partyID,
+					departureTime: doc.data().departureTime,
 				});
 			}
 		});
@@ -89,6 +120,143 @@ const PartyHistory = () => {
 				},
 			]);
 		}
+	};
+
+	const showConfirmDialog = (item) => {
+		return Alert.alert(
+			`Leave Party ${item.partyID}`,
+			'Are you sure you want to leave this party?',
+			[
+				{
+					text: 'Yes',
+					onPress: () => {
+						leaveParty(item);
+						prevOpenedRow.close();
+					},
+				},
+				{
+					text: 'No',
+					onPress: () => {
+						prevOpenedRow.close();
+					},
+				},
+			]
+		);
+	};
+
+	const leaveParty = async (item) => {
+		try {
+			await deleteDoc(
+				doc(db, 'parties', item.partyID.toString(), 'members', signedIn.userUID)
+			).then(() => {
+				getParties();
+				socket.emit('leaveParty', item.partyID.toString(), signedIn.userUID);
+			});
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	const closeRow = (index) => {
+		if (prevOpenedRow && prevOpenedRow !== row[index]) {
+			prevOpenedRow.close();
+		}
+		prevOpenedRow = row[index];
+	};
+
+	const renderItem = ({ item, index }) => {
+		const renderRightView = () => {
+			return (
+				<View
+					style={{
+						margin: 0,
+						alignContent: 'center',
+						justifyContent: 'center',
+						width: 70,
+					}}>
+					<Button
+						color={COLORS.errorRed}
+						filled={true}
+						onPress={(e) => {
+							showConfirmDialog(item);
+						}}
+						title="Leave"
+						style={{ height: '100%', borderRadius: 0 }}
+					/>
+				</View>
+			);
+		};
+
+		const connectToParty = async (partyID) => {
+			setFetching(true);
+			try {
+				const response = await axios.get(`${baseAPIUrl}/joinParty`, {
+					params: {
+						partyID: partyID,
+						userID: signedIn.userUID,
+						username: signedIn.userDisplayName,
+						avatar: signedIn.userPhotoURL,
+						lat: userLocation.coords.latitude,
+						lng: userLocation.coords.longitude,
+					},
+				});
+				if (response.data.status === 'SUCCESS') {
+					setError(false);
+					navigation.navigate('Map', {
+						partyID: partyID,
+						destination: response.data.data.destination,
+						arrivalTime: response.data.data.arrivalTime,
+					});
+				} else {
+					console.log(response.data);
+					setError(true);
+				}
+			} catch (error) {
+				console.error(error);
+				setError(true);
+			}
+			setFetching(false);
+		};
+
+		return (
+			<TouchableOpacity
+				onPress={() => connectToParty(item.partyID)}
+				disabled={fetching}>
+				<Swipeable
+					renderRightActions={(progress, dragX) => renderRightView()}
+					onSwipeableOpen={() => closeRow(item.partyID)}
+					ref={(ref) => (row[item.partyID] = ref)}
+					rightOpenValue={-100}>
+					<View style={styles.itemContainer}>
+						<View style={styles.itemRow}>
+							<Text
+								style={[
+									styles.itemTitle,
+									{ fontWeight: 'bold', paddingBottom: 5 },
+								]}>{`Party ID: ${item.partyID}`}</Text>
+							<Text
+								style={[
+									styles.itemPrice,
+									{
+										color:
+											item.departureTime <= Date.now()
+												? COLORS.errorRed
+												: '#131313',
+									},
+								]}>
+								{new Date(item.arrivalTime).toLocaleTimeString(
+									'en-GB',
+									displayOptions
+								)}
+							</Text>
+						</View>
+						<Text style={styles.itemTitle}>{item.name}</Text>
+
+						<Text style={styles.itemDescription}>{item.address}</Text>
+					</View>
+				</Swipeable>
+			</TouchableOpacity>
+		);
 	};
 
 	return (
@@ -134,26 +302,7 @@ const PartyHistory = () => {
 							<View style={styles.titleSeparator} />
 						</View>
 					)}
-					renderItem={({ item }) => (
-						<View style={styles.itemContainer}>
-							<View style={styles.itemRow}>
-								<Text
-									style={[
-										styles.itemTitle,
-										{ fontWeight: 'bold', paddingBottom: 5 },
-									]}>{`Party ID: ${item.partyID}`}</Text>
-								<Text style={styles.itemPrice}>
-									{new Date(item.arrivalTime).toLocaleTimeString(
-										'en-US',
-										displayOptions
-									)}
-								</Text>
-							</View>
-							<Text style={styles.itemTitle}>{item.name}</Text>
-
-							<Text style={styles.itemDescription}>{item.address}</Text>
-						</View>
-					)}
+					renderItem={(item) => renderItem(item)}
 				/>
 			</View>
 		</SafeAreaView>

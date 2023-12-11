@@ -64,6 +64,7 @@ const Map = () => {
 	const route = useRoute();
 	const famRef = useRef();
 	const { signedIn } = useContext(SignInContext);
+	const [currentSocket, setCurrentSocket] = useState(null);
 
 	// party
 	const [partyID, setPartyID] = useState(null);
@@ -99,6 +100,18 @@ const Map = () => {
 		console.log('notification from ' + partyID);
 		Vibration.vibrate(100);
 	});
+
+	let tmpSocket;
+	useEffect(() => {
+		if (currentSocket) {
+			tmpSocket = currentSocket;
+			socket.on(currentSocket, joinPartySocket);
+		} else {
+			socket.off(tmpSocket, joinPartySocket);
+		}
+	}, [currentSocket]);
+
+	let newMembers;
 
 	// animations
 	const [isCardViewVisible, setCardViewVisible] = useState(false);
@@ -210,7 +223,9 @@ const Map = () => {
 
 	useEffect(() => {
 		Keyboard.addListener('keyboardDidShow', () => {
-			famRef.current.close();
+			if (famRef !== null) {
+				famRef?.current?.close();
+			}
 		});
 	}, []);
 
@@ -571,7 +586,7 @@ const Map = () => {
 						}}>
 						<TouchableOpacity onPress={showDatePicker}>
 							<Text style={styles.arrivalTime}>
-								{arrivalTime.toLocaleDateString('en-US', selectionOptions)}
+								{arrivalTime.toLocaleDateString('en-GB', selectionOptions)}
 							</Text>
 						</TouchableOpacity>
 						<DateTimePickerModal
@@ -784,7 +799,7 @@ const Map = () => {
 
 			const q = query(collectionGroup(db, 'members'));
 			const querySnapshot = await getDocs(q);
-			let newMembers = [];
+			newMembers = [];
 			querySnapshot.forEach((doc) => {
 				if (doc.data().partyID == route.params.partyID) {
 					newMembers.push(
@@ -800,7 +815,6 @@ const Map = () => {
 				}
 			});
 			setMembers(newMembers, setStep('party'));
-
 			socket.emit('joinParty', route.params.partyID, {
 				uid: signedIn.userUID,
 				username: signedIn.userDisplayName,
@@ -809,28 +823,8 @@ const Map = () => {
 				lng: userLocation?.coords?.longitude,
 				departureTime: newDepartureTime.getTime(),
 			});
-			socket.on(route.params.partyID, (data) => {
-				let isInside = false;
-				let currentMembers = members.length > 0 ? members : newMembers;
-				currentMembers.forEach((member) => {
-					if (data.username === member.name) {
-						isInside = true;
-					}
-				});
-				if (!isInside) {
-					setMembers((currentMembers) => [
-						...currentMembers,
-						new User(
-							data.uid,
-							data.username,
-							data.avatar,
-							new Date(data.departureTime),
-							data.userLocation,
-							false
-						),
-					]);
-				}
-			});
+
+			setCurrentSocket(route.params.partyID);
 
 			clearParams();
 
@@ -842,8 +836,43 @@ const Map = () => {
 		}
 	};
 
+	const joinPartySocket = (user, action) => {
+		if (action === 'joined') {
+			let isInside = false;
+			let currentMembers = members.length > 0 ? members : newMembers;
+			currentMembers?.forEach((member) => {
+				if (user.username === member.name) {
+					isInside = true;
+				}
+			});
+			if (!isInside) {
+				setMembers((currentMembers) => [
+					...currentMembers,
+					new User(
+						user.uid,
+						user.username,
+						user.avatar,
+						new Date(user.departureTime),
+						user.userLocation,
+						false
+					),
+				]);
+			}
+		} else if (action === 'left') {
+			let currentMembers = members;
+			currentMembers = currentMembers.filter((member) => member.uid != user);
+			setMembers(currentMembers);
+		}
+	};
+
 	const openJoinParty = () => {
 		navigation.navigate('JoinParty', {
+			userLocation: userLocation,
+		});
+	};
+
+	const openPartyHistory = () => {
+		navigation.navigate('PartyHistory', {
 			userLocation: userLocation,
 		});
 	};
@@ -919,28 +948,9 @@ const Map = () => {
 			}
 		}
 
-		socket.on(partyID ? partyID : newPartyID, (data) => {
-			let isInside = false;
-			let currentMembers = members;
-			currentMembers.forEach((member) => {
-				if (data.username === member.name) {
-					isInside = true;
-				}
-			});
-			if (!isInside) {
-				setMembers((currentMembers) => [
-					...currentMembers,
-					new User(
-						data.uid,
-						data.username,
-						data.avatar,
-						new Date(data.departureTime),
-						data.userLocation,
-						false
-					),
-				]);
-			}
-		});
+		let currentPartyID = partyID ? partyID : newPartyID;
+
+		setCurrentSocket(currentPartyID);
 
 		navigation.navigate('PartyInfo', {
 			partyID: partyID ? partyID : newPartyID,
@@ -1122,14 +1132,18 @@ const Map = () => {
 								]}>
 								<Text style={styles.cardTitle}>Arrive By</Text>
 								<Text style={styles.cardTime}>
-									{arrivalTime.toLocaleTimeString('en-US', displayOptions)}
+									{arrivalTime.toLocaleTimeString('en-GB', displayOptions)}
 								</Text>
 							</View>
 						</View>
 					)}
 				</Animated.View>
 			</SafeAreaView>
-			<FloatingActionMenu openJoinParty={openJoinParty} ref={famRef} />
+			<FloatingActionMenu
+				openJoinParty={openJoinParty}
+				openPartyHistory={openPartyHistory}
+				ref={famRef}
+			/>
 			<SlidingUpPanel
 				ref={(c) => (this._panel = c)}
 				draggableRange={{ top: panelMaxHeight, bottom: panelMinHeight }}
