@@ -19,7 +19,9 @@
 				"NSCameraUsageDescription": "This app uses the camera to scan QR Codes to join parties.",
 				"NSAllowsArbitraryLoads": true,
 				"CADisableMinimumFrameDurationOnPhone": true,
-				"UIBackgroundModes": ["location", "fetch", "remote-notification"]
+				"UIBackgroundModes": ["location", "fetch", "remote-notification"],
+				"NSLocationWhenInUseUsageDescription": "OTWLah uses your location to get your current location and predict ride times",
+				"NSLocationAlwaysUsageDescription": "OTWLah will use your location to provide ETA's to yourself and others"
 			},
 			"config": {
 				"googleMapsApiKey": "AIzaSyCxlOmGq8HBOfB03ITpnPK5TcxCG6oS8RQ"

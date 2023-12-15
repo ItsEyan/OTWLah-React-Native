@@ -7,7 +7,6 @@ import {
 import { Avatar } from '@rneui/themed';
 import axios from 'axios';
 import * as Location from 'expo-location';
-import * as TaskManager from 'expo-task-manager';
 import {
 	collection,
 	collectionGroup,
@@ -279,37 +278,39 @@ const Map = () => {
 	const BACKGROUND_TRACKER = 'background-location-tracker';
 
 	useEffect(() => {
-		async () => {
+		let subscription;
+		const startLocationTracking = async () => {
 			const { status: foregroundStatus } =
 				await Location.requestForegroundPermissionsAsync();
 			if (foregroundStatus === 'granted') {
-				const { status: backgroundStatus } =
-					await Location.requestBackgroundPermissionsAsync();
-				if (backgroundStatus === 'granted') {
-					await Location.startLocationUpdatesAsync(BACKGROUND_TRACKER, {
-						accuracy: Location.Accuracy.Balanced,
-					});
-				}
+				// const { status: backgroundStatus } =
+				// 	await Location.requestBackgroundPermissionsAsync();
+				// if (backgroundStatus === 'granted') {
+				// 	console.log('Starting location updates...');
+				// 	await Location.startLocationUpdatesAsync(BACKGROUND_TRACKER, {
+				// 		accuracy: Location.Accuracy.Balanced,
+				// 		timeInterval: 1000,
+				// 		distanceInterval: 0,
+				// 	});
+				// }
+				subscription = await Location.watchPositionAsync(
+					{
+						accuracy: isAndroid
+							? Location.Accuracy.Low
+							: Location.Accuracy.Lowest,
+						timeInterval: 1000,
+						distanceInterval: 0,
+					},
+					(location) => {
+						console.log(location);
+						setUserLocation(location);
+						moveToLocation(location.coords.latitude, location.coords.longitude);
+					}
+				);
 			}
 		};
 
-		let subscription;
-
-		async () => {
-			subscription = await Location.watchPositionAsync(
-				{
-					accuracy: isAndroid
-						? Location.Accuracy.Low
-						: Location.Accuracy.Lowest,
-					timeInterval: 1000,
-					distanceInterval: 0,
-				},
-				(location) => {
-					console.log(location);
-					setUserLocation(location);
-				}
-			);
-		};
+		startLocationTracking();
 
 		return () => {
 			if (subscription) {
@@ -318,23 +319,23 @@ const Map = () => {
 		};
 	}, []);
 
-	TaskManager.defineTask(
-		BACKGROUND_TRACKER,
-		({ data: { locations }, error }) => {
-			if (error) {
-				console.log(error);
-				return;
-			}
-			console.log('Received new locations', locations);
-			setUserLocation(locations[0]);
-			socket.emit('locationUpdate', {
-				uid: signedIn.userUID,
-				partyID: partyID,
-				lat: locations[0].coords.latitude,
-				lng: locations[0].coords.longitude,
-			});
-		}
-	);
+	// TaskManager.defineTask(
+	// 	BACKGROUND_TRACKER,
+	// 	({ data: { locations }, error }) => {
+	// 		if (error) {
+	// 			console.log(error);
+	// 			return;
+	// 		}
+	// 		console.log('Received new locations', locations);
+	// 		setUserLocation(locations[0]);
+	// 		socket.emit('locationUpdate', {
+	// 			uid: signedIn.userUID,
+	// 			partyID: partyID,
+	// 			lat: locations[0].coords.latitude,
+	// 			lng: locations[0].coords.longitude,
+	// 		});
+	// 	}
+	// );
 
 	useEffect(() => {
 		(async () => {
