@@ -299,12 +299,34 @@ const Map = () => {
 							? Location.Accuracy.Low
 							: Location.Accuracy.Lowest,
 						timeInterval: 1000,
-						distanceInterval: 0,
+						distanceInterval: 5,
 					},
-					(location) => {
-						console.log(location);
+					async (location) => {
 						setUserLocation(location);
 						moveToLocation(location.coords.latitude, location.coords.longitude);
+						if (partyID) {
+							socket.emit('locationUpdated', partyID, {
+								uid: signedIn.userUID,
+								lat: location.coords.latitude,
+								lng: location.coords.longitude,
+							});
+							await setDoc(
+								doc(
+									db,
+									'parties',
+									partyID.toString(),
+									'members',
+									signedIn.userUID
+								),
+								{
+									currentLocation: {
+										lat: location.coords.latitude,
+										lng: location.coords.longitude,
+									},
+								},
+								{ merge: true }
+							);
+						}
 					}
 				);
 			}
@@ -328,7 +350,7 @@ const Map = () => {
 	// 		}
 	// 		console.log('Received new locations', locations);
 	// 		setUserLocation(locations[0]);
-	// 		socket.emit('locationUpdate', {
+	// 		socket.emit('locationUpdated', {
 	// 			uid: signedIn.userUID,
 	// 			partyID: partyID,
 	// 			lat: locations[0].coords.latitude,
@@ -1032,7 +1054,30 @@ const Map = () => {
 		}
 	};
 
-	const partySocket = (user, action, uid, lat, lng) => {
+	const partySocket = (user, action, lat, lng) => {
+		if (action === 'locationUpdate') {
+			let newMembers = [];
+			members.forEach((member) => {
+				if (member.uid === user) {
+					let newMember = new User(
+						member.uid,
+						member.name,
+						member.avatar,
+						member.departureTime,
+						{
+							lat: lat,
+							lng: lng,
+						},
+						member.isLeader
+					);
+					newMembers.push(newMember);
+					return;
+				}
+				newMembers.push(member);
+			});
+			setMembers(newMembers);
+			return;
+		}
 		if (user === 'partyEdited' && action === undefined) {
 			editPartySocket(user);
 			return;

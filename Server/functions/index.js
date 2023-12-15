@@ -65,8 +65,8 @@ io.on('connection', (socket) => {
 		io.sockets.emit(partyID, 'partyEdited');
 	});
 
-	socket.on('locationUpdated', (partyID, uid, lat, lng) => {
-		io.sockets.emit(partyID, 'locationUpdate', uid, lat, lng);
+	socket.on('locationUpdated', (partyID, { uid, lat, lng }) => {
+		io.sockets.emit(partyID, uid, 'locationUpdate', lat, lng);
 	});
 
 	socket.on('notification', (partyID, uid) => {
