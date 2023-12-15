@@ -10,7 +10,7 @@ import Animated, {
 import COLORS from '../constants/colors';
 import Icon, { Icons } from './Icons';
 
-const Member = ({ member, socket, partyID }) => {
+const Member = ({ member, socket, partyID, moveCamera }) => {
 	const shakeValue = useSharedValue(0);
 
 	const bellAnimationStyle = useAnimatedStyle(() => {
@@ -48,7 +48,7 @@ const Member = ({ member, socket, partyID }) => {
 				source={require('../assets/crown.png')}
 				style={{ opacity: member.isLeader ? 1 : 0 }}
 			/>
-			<View
+			<TouchableOpacity
 				style={{
 					borderRadius: 65,
 					width: 65,
@@ -56,12 +56,18 @@ const Member = ({ member, socket, partyID }) => {
 					backgroundColor: COLORS.gray,
 					justifyContent: 'center',
 					alignItems: 'center',
+				}}
+				onPress={() => {
+					moveCamera(
+						parseFloat(member.currentLocation.lat),
+						parseFloat(member.currentLocation.lng)
+					);
 				}}>
 				<Image
 					source={{ uri: member.avatar }}
 					style={{ width: 50, height: 50 }}
 				/>
-			</View>
+			</TouchableOpacity>
 			<Text style={{ fontWeight: 'bold', fontSize: 17 }} numberOfLines={1}>
 				{member.name}
 			</Text>

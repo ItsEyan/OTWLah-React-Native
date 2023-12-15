@@ -61,6 +61,14 @@ io.on('connection', (socket) => {
 		io.sockets.emit(partyID, uid, 'left');
 	});
 
+	socket.on('partyEdited', (partyID) => {
+		io.sockets.emit(partyID, 'partyEdited');
+	});
+
+	socket.on('locationUpdated', (partyID, uid, lat, lng) => {
+		io.sockets.emit(partyID, 'locationUpdate', uid, lat, lng);
+	});
+
 	socket.on('notification', (partyID, uid) => {
 		io.to(sessionsMap[uid]).emit('notification', partyID);
 	});
@@ -244,8 +252,8 @@ app.get('/joinParty', async (req, res) => {
 				createdAt: doc.data().createdAt,
 				arrivalTime: doc.data().arrivalTime,
 				currentLocation: {
-					lat: lat,
-					lng: lng,
+					lat: parseFloat(lat),
+					lng: parseFloat(lng),
 				},
 				partyID: partyID,
 				uid: userID,

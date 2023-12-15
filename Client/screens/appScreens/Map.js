@@ -4,12 +4,15 @@ import {
 	useNavigation,
 	useRoute,
 } from '@react-navigation/native';
+import { Avatar } from '@rneui/themed';
 import axios from 'axios';
 import * as Location from 'expo-location';
+import * as TaskManager from 'expo-task-manager';
 import {
 	collection,
 	collectionGroup,
 	doc,
+	getDoc,
 	getDocs,
 	query,
 	setDoc,
@@ -83,6 +86,8 @@ const Map = () => {
 	const [directions, setDirections] = useState(null);
 	const [departureTime, setDepartureTime] = useState(null);
 	const [timeLeft, setTimeLeft] = useState(null);
+	const [isEditing, setIsEditing] = useState(false);
+	const [tmpLocation, setTmpLocation] = useState(null);
 	const isFocused = useIsFocused();
 
 	const [canPanelDrag, setCanPanelDrag] = useState(true);
@@ -105,9 +110,9 @@ const Map = () => {
 	useEffect(() => {
 		if (currentSocket) {
 			tmpSocket = currentSocket;
-			socket.on(currentSocket, joinPartySocket);
+			socket.on(currentSocket, partySocket);
 		} else {
-			socket.off(tmpSocket, joinPartySocket);
+			socket.off(tmpSocket, partySocket);
 		}
 	}, [currentSocket]);
 
@@ -269,6 +274,68 @@ const Map = () => {
 	const [panelMaxHeight, setPanelMaxHeight] = useState(screenHeight / 3.1);
 	const [panelMinHeight, setPanelMinHeight] = useState(0);
 
+	// location
+
+	const BACKGROUND_TRACKER = 'background-location-tracker';
+
+	useEffect(() => {
+		async () => {
+			const { status: foregroundStatus } =
+				await Location.requestForegroundPermissionsAsync();
+			if (foregroundStatus === 'granted') {
+				const { status: backgroundStatus } =
+					await Location.requestBackgroundPermissionsAsync();
+				if (backgroundStatus === 'granted') {
+					await Location.startLocationUpdatesAsync(BACKGROUND_TRACKER, {
+						accuracy: Location.Accuracy.Balanced,
+					});
+				}
+			}
+		};
+
+		let subscription;
+
+		async () => {
+			subscription = await Location.watchPositionAsync(
+				{
+					accuracy: isAndroid
+						? Location.Accuracy.Low
+						: Location.Accuracy.Lowest,
+					timeInterval: 1000,
+					distanceInterval: 0,
+				},
+				(location) => {
+					console.log(location);
+					setUserLocation(location);
+				}
+			);
+		};
+
+		return () => {
+			if (subscription) {
+				subscription.remove();
+			}
+		};
+	}, []);
+
+	TaskManager.defineTask(
+		BACKGROUND_TRACKER,
+		({ data: { locations }, error }) => {
+			if (error) {
+				console.log(error);
+				return;
+			}
+			console.log('Received new locations', locations);
+			setUserLocation(locations[0]);
+			socket.emit('locationUpdate', {
+				uid: signedIn.userUID,
+				partyID: partyID,
+				lat: locations[0].coords.latitude,
+				lng: locations[0].coords.longitude,
+			});
+		}
+	);
+
 	useEffect(() => {
 		(async () => {
 			let { status } = await Location.requestForegroundPermissionsAsync();
@@ -369,7 +436,7 @@ const Map = () => {
 						key: GOOGLE_IOS_API_KEY,
 					},
 				})
-				.then((response) => {
+				.then(async (response) => {
 					if (response.data.status !== 'OK') {
 						throw new Error('No route found');
 					}
@@ -409,6 +476,46 @@ const Map = () => {
 					}
 					setDepartureTime(newDepartureTime);
 					mapRef.current.animateToRegion(findZoomCoords(coords), 1000);
+
+					if (isEditing) {
+						await setDoc(
+							doc(db, 'parties', partyID.toString()),
+							{
+								arrivalTime: arrivalTime.getTime(),
+								destination: {
+									name: currentPlace?.name,
+									address: currentPlace?.formatted_address,
+									lat: currentPlace?.geometry?.location?.lat,
+									lng: currentPlace?.geometry?.location?.lng,
+								},
+							},
+							{ merge: true }
+						);
+						await setDoc(
+							doc(
+								db,
+								'parties',
+								partyID.toString(),
+								'members',
+								signedIn.userUID
+							),
+							{
+								arrivalTime: arrivalTime.getTime(),
+								destination: {
+									name: currentPlace?.name,
+									address: currentPlace?.formatted_address,
+									lat: currentPlace?.geometry?.location?.lat,
+									lng: currentPlace?.geometry?.location?.lng,
+								},
+								currentLocation: {
+									lat: userLocation?.coords?.latitude,
+									lng: userLocation?.coords?.longitude,
+								},
+								departureTime: newDepartureTime.getTime(),
+							},
+							{ merge: true }
+						);
+					}
 				});
 		} catch (error) {
 			console.log(error);
@@ -519,7 +626,21 @@ const Map = () => {
 	}
 
 	const panelHidden = (value) => {
-		if (
+		if (value === 0 && isEditing) {
+			setIsEditing(false);
+			setCurrentPlace(tmpLocation);
+			setPin({
+				latitude: tmpLocation?.geometry?.location?.lat,
+				latitudeDelta: latDelta,
+				longitude: tmpLocation?.geometry?.location?.lng,
+				longitudeDelta: longDelta,
+			});
+			setPanelMinHeight(screenHeight / 4);
+			setPanelMaxHeight(screenHeight / 1.3);
+			this._panel.show(screenHeight / 4);
+			mapRef.current.animateToRegion(findZoomCoords(routeCoords), 1000);
+			setStep('party');
+		} else if (
 			value === 0 &&
 			currentPlace &&
 			(step === 'selecting' || step === 'settime')
@@ -548,7 +669,13 @@ const Map = () => {
 						color={COLORS.primary}
 						onPress={() => {
 							setStep('settime');
-							setArrivalTime(new Date());
+							setArrivalTime(
+								isEditing
+									? arrivalTime.getTime() > Date.now()
+										? new Date(arrivalTime.getTime())
+										: new Date()
+									: new Date()
+							);
 							setPanelMaxHeight(screenHeight / 2.2);
 							this._panel.show(screenHeight / 2.2);
 						}}
@@ -607,12 +734,22 @@ const Map = () => {
 						filled={true}
 						color={COLORS.primary}
 						onPress={async () => {
-							setStep('travelling');
-							famRef.current.close();
-							await getRoute(userLocation, currentPlace?.geometry?.location);
-							setPanelMinHeight(screenHeight / 5);
-							setPanelMaxHeight(screenHeight / 1.5);
-							this._panel.show(screenHeight / 5);
+							if (isEditing) {
+								await getRoute(userLocation, currentPlace?.geometry?.location);
+								setPanelMinHeight(screenHeight / 4);
+								setPanelMaxHeight(screenHeight / 1.3);
+								this._panel.show(screenHeight / 4);
+								socket.emit('partyEdited', partyID);
+								setIsEditing(false);
+								setStep('party');
+							} else {
+								setStep('travelling');
+								famRef.current.close();
+								await getRoute(userLocation, currentPlace?.geometry?.location);
+								setPanelMinHeight(screenHeight / 5);
+								setPanelMaxHeight(screenHeight / 1.5);
+								this._panel.show(screenHeight / 5);
+							}
 						}}
 					/>
 				</View>
@@ -836,7 +973,69 @@ const Map = () => {
 		}
 	};
 
-	const joinPartySocket = (user, action) => {
+	const editPartySocket = (action) => {
+		if (action === 'partyEdited') {
+			(async () => {
+				try {
+					const q = doc(db, 'parties', partyID.toString());
+					const querySnapshot = await getDoc(q);
+					setArrivalTime(new Date(querySnapshot.data().arrivalTime));
+					setCurrentPlace({
+						name: querySnapshot.data().destination.name,
+						formatted_address: querySnapshot.data().destination.address,
+						geometry: {
+							location: {
+								lat: querySnapshot.data().destination.lat,
+								lng: querySnapshot.data().destination.lng,
+							},
+						},
+					});
+					setPin({
+						latitude: querySnapshot.data().destination.lat,
+						latitudeDelta: latDelta,
+						longitude: querySnapshot.data().destination.lng,
+						longitudeDelta: longDelta,
+					});
+
+					let newDepartureTime = await getRoute(
+						userLocation,
+						{
+							lat: querySnapshot.data().destination.lat,
+							lng: querySnapshot.data().destination.lng,
+						},
+						new Date(querySnapshot.data().arrivalTime)
+					);
+
+					await setDoc(
+						doc(db, 'parties', partyID.toString(), 'members', signedIn.userUID),
+						{
+							arrivalTime: arrivalTime.getTime(),
+							destination: {
+								name: querySnapshot.data().destination.name,
+								address: querySnapshot.data().destination.address,
+								lat: querySnapshot.data().destination.lat,
+								lng: querySnapshot.data().destination.lat,
+							},
+							currentLocation: {
+								lat: userLocation?.coords?.latitude,
+								lng: userLocation?.coords?.longitude,
+							},
+							departureTime: newDepartureTime.getTime(),
+						},
+						{ merge: true }
+					);
+				} catch (error) {
+					console.log(error);
+				}
+			})();
+		}
+	};
+
+	const partySocket = (user, action, uid, lat, lng) => {
+		if (user === 'partyEdited' && action === undefined) {
+			editPartySocket(user);
+			return;
+		}
 		if (action === 'joined') {
 			let isInside = false;
 			let currentMembers = members.length > 0 ? members : newMembers;
@@ -862,6 +1061,16 @@ const Map = () => {
 			let currentMembers = members;
 			currentMembers = currentMembers.filter((member) => member.uid != user);
 			setMembers(currentMembers);
+		} else if (action === 'locationUpdate') {
+			members.forEach((member) => {
+				if (member.uid === uid) {
+					member.currentLocation = {
+						lat: lat,
+						lng: lng,
+					};
+					return;
+				}
+			});
 		}
 	};
 
@@ -976,7 +1185,12 @@ const Map = () => {
 					data={members}
 					keyExtractor={(item) => item.name}
 					renderItem={(item) => (
-						<Member member={item.item} socket={socket} partyID={partyID} />
+						<Member
+							member={item.item}
+							socket={socket}
+							partyID={partyID}
+							moveCamera={moveToLocation}
+						/>
 					)}
 					horizontal={true}
 				/>
@@ -1000,13 +1214,26 @@ const Map = () => {
 							title="Edit Party"
 							filled={true}
 							color={COLORS.primary}
-							onPress={() => {}}
+							onPress={editParty}
 							style={{ paddingHorizontal: 30, marginTop: 10, height: 55 }}
 						/>
 					)}
 				</View>
 			</View>
 		);
+	};
+
+	const editParty = () => {
+		setStep('selecting');
+		moveToLocation(
+			currentPlace?.geometry?.location?.lat,
+			currentPlace?.geometry?.location?.lng
+		);
+		setIsEditing(true);
+		setTmpLocation(currentPlace);
+		setPanelMinHeight(0);
+		setPanelMaxHeight(screenHeight / 3.1);
+		this._panel.show(screenHeight / 3.1);
 	};
 
 	return (
@@ -1023,7 +1250,7 @@ const Map = () => {
 					longitude: 103.851959,
 					longitudeDelta: longDelta,
 				}}>
-				{routeCoords && (
+				{routeCoords && !isEditing && (
 					<Polyline
 						coordinates={routeCoords}
 						strokeColor={COLORS.primary}
@@ -1043,6 +1270,33 @@ const Map = () => {
 						</MapCallout>
 					</MarkerAnimated>
 				)}
+				{step === 'party' &&
+					members.map((member, index) => {
+						if (member.uid === signedIn.userUID) return null;
+						return (
+							<MarkerAnimated
+								key={index}
+								coordinate={{
+									latitude: parseFloat(member.currentLocation.lat),
+									longitude: parseFloat(member.currentLocation.lng),
+								}}
+								onCalloutPress={() => {
+									Keyboard.dismiss();
+								}}>
+								<Avatar
+									rounded
+									source={{
+										uri: member.avatar,
+									}}
+									containerStyle={{ backgroundColor: COLORS.gray }}
+									size={20}
+								/>
+								<MapCallout style={{ flex: 1, position: 'relative' }}>
+									<Text>{member.name}</Text>
+								</MapCallout>
+							</MarkerAnimated>
+						);
+					})}
 				<MarkerAnimated
 					coordinate={userLocation?.coords}
 					onPress={Keyboard.dismiss}
