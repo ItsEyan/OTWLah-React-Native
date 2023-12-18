@@ -379,28 +379,34 @@ const Settings = () => {
 						</View>
 					</View>
 					<ScrollView>
-						<View
-							style={{
-								alignItems: 'center',
-								marginTop: 30,
-								backgroundColor: COLORS.white,
-								width: '100%',
-								borderRadius: 10,
-							}}>
-							<TouchableOpacity onPress={selectProfilePicture}>
-								<Avatar
-									rounded
-									source={{
-										uri: signedIn.userPhotoURL,
-									}}
-									containerStyle={{ backgroundColor: COLORS.gray }}
-									size={100}
-								/>
-							</TouchableOpacity>
-							<Text style={{ fontWeight: 'bold', fontSize: 23, marginTop: 8 }}>
-								{signedIn.userDisplayName}
-							</Text>
-							<Text>{signedIn.userEmail}</Text>
+						<View style={{ flex: 1, alignItems: 'center' }}>
+							<View
+								style={{
+									alignItems: 'center',
+									marginTop: 20,
+									paddingTop: 20,
+									backgroundColor: COLORS.white,
+									borderRadius: 10,
+									paddingBottom: 11,
+									paddingHorizontal: 20,
+									...styles.shadow,
+								}}>
+								<TouchableOpacity onPress={selectProfilePicture}>
+									<Avatar
+										rounded
+										source={{
+											uri: signedIn.userPhotoURL,
+										}}
+										containerStyle={{ backgroundColor: COLORS.gray }}
+										size={100}
+									/>
+								</TouchableOpacity>
+								<Text
+									style={{ fontWeight: 'bold', fontSize: 23, marginTop: 8 }}>
+									{signedIn.userDisplayName}
+								</Text>
+								<Text>{signedIn.userEmail}</Text>
+							</View>
 						</View>
 
 						<SectionList
@@ -437,6 +443,12 @@ const styles = StyleSheet.create({
 		color: COLORS.black,
 		alignSelf: 'center',
 		marginLeft: 10,
+	},
+	shadow: {
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowRadius: 5,
+		shadowOpacity: 0.3,
 	},
 });
 
