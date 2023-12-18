@@ -164,6 +164,7 @@ const Login = () => {
 					keyboardType="email-address"
 					setValue={setForgotPasswordEmail}
 					error={forgotPasswordEmailError}
+					submit={sendResetPasswordEmail}
 				/>
 
 				<Button
@@ -181,106 +182,110 @@ const Login = () => {
 	};
 
 	return (
-		<SafeAreaView style={wrapper}>
+		<View style={{ flex: 1 }}>
 			<KeyboardAvoidingWrapper>
-				<View style={container}>
-					<View style={topHalf}>
-						<LinearGradient
-							colors={[COLORS.pink, COLORS.primary]}
-							start={{ x: 0, y: 0.7 }}
-							style={iconBg}>
-							<Image
-								style={{ width: '100%', height: '100%', opacity: 1 }}
-								source={require('../../assets/OTWLahLogo.png')}
-							/>
-						</LinearGradient>
-					</View>
-					<View style={{ marginTop: 10 }}>
-						<Text style={[{ textAlign: 'center' }, header]}>Welcome Back</Text>
-					</View>
+				<SafeAreaView style={wrapper}>
+					<View style={container}>
+						<View style={topHalf}>
+							<LinearGradient
+								colors={[COLORS.pink, COLORS.primary]}
+								start={{ x: 0, y: 0.7 }}
+								style={iconBg}>
+								<Image
+									style={{ width: '100%', height: '100%', opacity: 1 }}
+									source={require('../../assets/OTWLahLogo.png')}
+								/>
+							</LinearGradient>
+						</View>
+						<View style={{ marginTop: 10 }}>
+							<Text style={[{ textAlign: 'center' }, header]}>
+								Welcome Back
+							</Text>
+						</View>
 
-					<InputField
-						description="Email Address"
-						hint="Enter your email address"
-						keyboardType="email-address"
-						setValue={setEmail}
-						error={emailError}
-					/>
-					<InputField
-						description="Password"
-						hint="Enter your password"
-						keyboardType="default"
-						setValue={setPassword}
-						error={passwordError}
-						isPassword={true}
-					/>
-					<Pressable
-						onPress={() => {
-							this._panel.show();
-							Keyboard.dismiss();
-						}}
-						onPressIn={() => setForgotPasswordSelected(true)}
-						onPressOut={() => setForgotPasswordSelected(false)}>
-						<Text
-							style={{
-								color: COLORS.grey,
-								fontSize: 13,
-								opacity: forgotPasswordSelected ? 0.4 : 1,
-								fontWeight: 'bold',
-								textAlign: 'right',
-							}}>
-							Forgot your password?
-						</Text>
-					</Pressable>
-
-					<Button
-						title="Log In"
-						filled={true}
-						onPress={login}
-						style={{
-							marginTop: 18,
-							marginBottom: 4,
-						}}
-					/>
-					<View style={{ flexDirection: 'row', justifyContent: 'center' }}>
-						<InfoText style={{ paddingVertical: 10 }}>
-							Don't have an account?{'  '}
-						</InfoText>
+						<InputField
+							description="Email Address"
+							hint="Enter your email address"
+							keyboardType="email-address"
+							setValue={setEmail}
+							error={emailError}
+						/>
+						<InputField
+							description="Password"
+							hint="Enter your password"
+							keyboardType="default"
+							setValue={setPassword}
+							error={passwordError}
+							submit={login}
+							isPassword={true}
+						/>
 						<Pressable
 							onPress={() => {
+								this._panel.show();
 								Keyboard.dismiss();
-								navigation.navigate('Register');
 							}}
-							onPressIn={() => setRegisterSelected(true)}
-							onPressOut={() => setRegisterSelected(false)}>
+							onPressIn={() => setForgotPasswordSelected(true)}
+							onPressOut={() => setForgotPasswordSelected(false)}>
 							<Text
 								style={{
-									color: COLORS.primary,
-									opacity: registerSelected ? 0.4 : 1,
-									fontSize: 15,
-									paddingVertical: 10,
+									color: COLORS.grey,
+									fontSize: 13,
+									opacity: forgotPasswordSelected ? 0.4 : 1,
 									fontWeight: 'bold',
+									textAlign: 'right',
 								}}>
-								Sign up
+								Forgot your password?
 							</Text>
 						</Pressable>
-					</View>
-					<View style={{ height: 50 }} />
-				</View>
-				<SlidingUpPanel
-					ref={(c) => (this._panel = c)}
-					draggableRange={{ top: screenHeight / 2.5, bottom: 0 }}
-					snappingPoints={[0]}
-					backdropOpacity={0.6}>
-					<View style={panel}>
-						<View style={{ alignItems: 'center' }}>
-							<View style={panelHandle} />
+
+						<Button
+							title="Log In"
+							filled={true}
+							onPress={login}
+							style={{
+								marginTop: 18,
+								marginBottom: 4,
+							}}
+						/>
+						<View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+							<InfoText style={{ paddingVertical: 10 }}>
+								Don't have an account?{'  '}
+							</InfoText>
+							<Pressable
+								onPress={() => {
+									Keyboard.dismiss();
+									navigation.navigate('Register');
+								}}
+								onPressIn={() => setRegisterSelected(true)}
+								onPressOut={() => setRegisterSelected(false)}>
+								<Text
+									style={{
+										color: COLORS.primary,
+										opacity: registerSelected ? 0.4 : 1,
+										fontSize: 15,
+										paddingVertical: 10,
+										fontWeight: 'bold',
+									}}>
+									Sign up
+								</Text>
+							</Pressable>
 						</View>
-						{panelContent()}
 					</View>
-				</SlidingUpPanel>
+					<SlidingUpPanel
+						ref={(c) => (this._panel = c)}
+						draggableRange={{ top: screenHeight / 2.5, bottom: 0 }}
+						snappingPoints={[0]}
+						backdropOpacity={0.6}>
+						<View style={panel}>
+							<View style={{ alignItems: 'center' }}>
+								<View style={panelHandle} />
+							</View>
+							{panelContent()}
+						</View>
+					</SlidingUpPanel>
+				</SafeAreaView>
 			</KeyboardAvoidingWrapper>
-		</SafeAreaView>
+		</View>
 	);
 };
 
@@ -291,7 +296,6 @@ const styles = StyleSheet.create({
 		paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
 	},
 	container: {
-		flex: 1,
 		paddingHorizontal: 22,
 		height: '100%',
 	},
@@ -315,7 +319,7 @@ const styles = StyleSheet.create({
 		opacity: 0.8,
 	},
 	topHalf: {
-		flex: 1,
+		flex: 0.5,
 		justifyContent: 'center',
 		alignItems: 'center',
 		paddingTop: 20,

@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	topHalf: {
-		flex: 1,
+		flex: 0.5,
 		justifyContent: 'center',
 		alignItems: 'center',
 		paddingTop: 50,

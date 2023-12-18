@@ -15,6 +15,7 @@ const InputField = ({
 	keyboardType,
 	setValue,
 	error,
+	submit = () => {},
 	isPassword = false,
 }) => {
 	const [isPasswordShown, setIsPasswordShown] = isPassword
@@ -32,6 +33,7 @@ const InputField = ({
 					keyboardType={keyboardType}
 					onChangeText={(text) => setValue(text)}
 					style={{ width: '100%', height: '100%' }}
+					onSubmitEditing={submit}
 				/>
 				{isPassword && (
 					<TouchableOpacity

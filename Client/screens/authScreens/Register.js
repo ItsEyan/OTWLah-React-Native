@@ -11,10 +11,12 @@ import {
 	StatusBar,
 	StyleSheet,
 	Text,
+	TouchableOpacity,
 	View,
 } from 'react-native';
 import { FIREBASE_DB } from '../../FirebaseConfig';
 import Button from '../../components/Button';
+import Icon, { Icons } from '../../components/Icons';
 import InputField from '../../components/InputField';
 import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
 import { InfoText } from '../../components/styles';
@@ -177,8 +179,26 @@ const Register = () => {
 			<KeyboardAvoidingWrapper>
 				<View style={container}>
 					<View style={{ marginVertical: 22 }}>
-						<Text style={header}>Create Account</Text>
-						<Text style={description}>Connect with your friends!</Text>
+						<View
+							style={{
+								marginBottom: 24,
+								zIndex: 1,
+							}}>
+							<TouchableOpacity onPress={() => navigation.goBack()}>
+								<View>
+									<Icon
+										type={Icons.Ionicons}
+										name="ios-chevron-back-outline"
+										size={30}
+										color={COLORS.black}
+									/>
+								</View>
+							</TouchableOpacity>
+						</View>
+						<View>
+							<Text style={header}>Create Account</Text>
+							<Text style={description}>Connect with your friends!</Text>
+						</View>
 					</View>
 
 					<InputField
@@ -251,7 +271,6 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 22,
 	},
 	header: {
-		marginVertical: 22,
 		fontWeight: 'bold',
 		fontSize: 22,
 		color: COLORS.black,
