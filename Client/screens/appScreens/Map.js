@@ -350,9 +350,8 @@ const Map = () => {
 	// 		}
 	// 		console.log('Received new locations', locations);
 	// 		setUserLocation(locations[0]);
-	// 		socket.emit('locationUpdated', {
+	// 		socket.emit('locationUpdated', partyID, {
 	// 			uid: signedIn.userUID,
-	// 			partyID: partyID,
 	// 			lat: locations[0].coords.latitude,
 	// 			lng: locations[0].coords.longitude,
 	// 		});

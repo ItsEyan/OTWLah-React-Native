@@ -1,3 +1,4 @@
+import { Avatar } from '@rneui/themed';
 import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
@@ -50,10 +51,6 @@ const Member = ({ member, socket, partyID, moveCamera }) => {
 			/>
 			<TouchableOpacity
 				style={{
-					borderRadius: 65,
-					width: 65,
-					height: 65,
-					backgroundColor: COLORS.gray,
 					justifyContent: 'center',
 					alignItems: 'center',
 				}}
@@ -63,9 +60,13 @@ const Member = ({ member, socket, partyID, moveCamera }) => {
 						parseFloat(member.currentLocation.lng)
 					);
 				}}>
-				<Image
-					source={{ uri: member.avatar }}
-					style={{ width: 50, height: 50 }}
+				<Avatar
+					rounded
+					source={{
+						uri: member.avatar,
+					}}
+					containerStyle={{ backgroundColor: COLORS.gray }}
+					size={65}
 				/>
 			</TouchableOpacity>
 			<Text style={{ fontWeight: 'bold', fontSize: 17 }} numberOfLines={1}>

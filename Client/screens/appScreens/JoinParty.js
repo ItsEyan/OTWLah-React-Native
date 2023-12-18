@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Button from '../../components/Button';
 import CodeInputField from '../../components/CodeInputField';
+import Icon, { Icons } from '../../components/Icons';
 import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
 import COLORS from '../../constants/colors';
 import { baseAPIUrl } from '../../constants/sharedVariables';
@@ -66,6 +67,24 @@ const JoinParty = () => {
 	return (
 		<SafeAreaView style={styles.wrapper}>
 			<KeyboardAvoidingWrapper>
+				<View
+					style={{
+						position: 'absolute',
+						paddingTop: 30,
+						paddingLeft: 30,
+						zIndex: 1,
+					}}>
+					<TouchableOpacity onPress={() => navigation.goBack()}>
+						<View>
+							<Icon
+								type={Icons.Ionicons}
+								name="ios-chevron-back-outline"
+								size={30}
+								color={COLORS.black}
+							/>
+						</View>
+					</TouchableOpacity>
+				</View>
 				<View style={styles.container}>
 					<View style={styles.topHalf}>
 						<LinearGradient

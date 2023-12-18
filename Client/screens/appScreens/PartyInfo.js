@@ -85,8 +85,8 @@ const PartyInfo = () => {
 
 	const showConfirmDialog = (item) => {
 		return Alert.alert(
-			`Leave Party ${item.partyID}`,
-			'Are you sure you want to kick this member?',
+			`Kick Member`,
+			`Are you sure you want to kick ${item.name}?`,
 			[
 				{
 					text: 'Yes',

@@ -23,6 +23,7 @@ import SectionList from 'react-native-tabs-section-list';
 import { io } from 'socket.io-client';
 import { FIREBASE_DB } from '../../FirebaseConfig';
 import Button from '../../components/Button';
+import Icon, { Icons } from '../../components/Icons';
 import COLORS from '../../constants/colors';
 import { baseAPIUrl } from '../../constants/sharedVariables';
 import { SignInContext } from '../../contexts/authContext';
@@ -261,16 +262,37 @@ const PartyHistory = () => {
 
 	return (
 		<SafeAreaView style={{ flex: 1, backgroundColor: COLORS.white }}>
-			<View>
-				<Text
+			<View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+				<View
 					style={{
-						fontWeight: 'bold',
-						textAlign: 'center',
-						padding: 10,
-						fontSize: 20,
+						marginLeft: 10,
+						marginTop: 7,
+						position: 'absolute',
+						left: 0,
+						zIndex: 1,
 					}}>
-					Party History
-				</Text>
+					<TouchableOpacity onPress={() => navigation.goBack()}>
+						<View>
+							<Icon
+								type={Icons.Ionicons}
+								name="ios-chevron-back-outline"
+								size={30}
+								color={COLORS.black}
+							/>
+						</View>
+					</TouchableOpacity>
+				</View>
+				<View style={{ flex: 1, marginRight: 10 }}>
+					<Text
+						style={{
+							fontWeight: 'bold',
+							textAlign: 'center',
+							padding: 10,
+							fontSize: 20,
+						}}>
+						Party History
+					</Text>
+				</View>
 			</View>
 			<View style={styles.container}>
 				<SectionList
