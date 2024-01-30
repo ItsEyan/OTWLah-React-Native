@@ -2,11 +2,10 @@
 
 ## Purpose
 
-OTA Lah is a transformative real-time transportation app designed specifically for the unique climate and commuting challenges of Singapore. Its key features include:
+OTA Lah is a transformative real-time group transportation app designed specifically for the unique commuting challenges of Singapore. Its key features include:
 
-- **Minimizing Outdoor Waiting**: Integrates with the Singapore LTA API and Google Maps API to provide timely bus arrival information, reducing waiting time under harsh weather conditions.
-- **Destination Weather Prediction**: Offers weather forecasts at your destination upon your estimated arrival time, helping to prepare for sudden weather changes.
 - **Party Mode for Group Travel**: Facilitates synchronized group travel by calculating individualized departure times and providing real-time location and weather updates.
+- **Minimizing Outdoor Waiting**: Integrates with the Singapore LTA API and Google Maps API to provide timely bus arrival information, reducing waiting time under harsh weather conditions.
 
 By promoting more efficient and weather-aware bus commutes, OTA Lah encourages a shift from cars to public transport, aiding environmental conservation efforts.
 
