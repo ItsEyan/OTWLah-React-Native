@@ -3,7 +3,7 @@ import axios from 'axios';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
 	Dimensions,
@@ -44,6 +44,7 @@ const Login = () => {
 	const [forgotPasswordEmailError, setForgotPasswordEmailError] = useState('');
 	const [forgotPasswordSelected, setForgotPasswordSelected] = useState(false);
 	const [registerSelected, setRegisterSelected] = useState(false);
+	const [isPanelVisible, setIsPanelVisible] = useState(false);
 	const navigation = useNavigation();
 
 	const auth = getAuth();
@@ -150,6 +151,18 @@ const Login = () => {
 		}
 	};
 
+	const panelHidden = (value) => {
+		if (value === 0) {
+			setIsPanelVisible(false);
+		}
+	};
+
+	useEffect(() => {
+		if (isPanelVisible) {
+			this._panel.show();
+		}
+	}, [isPanelVisible]);
+
 	const panelContent = () => {
 		return (
 			<View style={{ marginHorizontal: 20 }}>
@@ -221,7 +234,7 @@ const Login = () => {
 						/>
 						<Pressable
 							onPress={() => {
-								this._panel.show();
+								setIsPanelVisible(true);
 								Keyboard.dismiss();
 							}}
 							onPressIn={() => setForgotPasswordSelected(true)}
@@ -271,18 +284,24 @@ const Login = () => {
 							</Pressable>
 						</View>
 					</View>
-					<SlidingUpPanel
-						ref={(c) => (this._panel = c)}
-						draggableRange={{ top: screenHeight / 2.5, bottom: 0 }}
-						snappingPoints={[0]}
-						backdropOpacity={0.6}>
-						<View style={panel}>
-							<View style={{ alignItems: 'center' }}>
-								<View style={panelHandle} />
+					{isPanelVisible && (
+						<SlidingUpPanel
+							ref={(c) => (this._panel = c)}
+							draggableRange={{ top: screenHeight / 2.5, bottom: 0 }}
+							snappingPoints={[0]}
+							backdropOpacity={0.6}
+							onMomentumDragEnd={panelHidden}
+							onBottomReached={() => {
+								setIsPanelVisible(false);
+							}}>
+							<View style={panel}>
+								<View style={{ alignItems: 'center' }}>
+									<View style={panelHandle} />
+								</View>
+								{panelContent()}
 							</View>
-							{panelContent()}
-						</View>
-					</SlidingUpPanel>
+						</SlidingUpPanel>
+					)}
 				</SafeAreaView>
 			</KeyboardAvoidingWrapper>
 		</View>

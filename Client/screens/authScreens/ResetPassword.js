@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Keyboard, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import Button from '../../components/Button';
 import InputField from '../../components/InputField';
-import KeyboardAvoidingWrapper from '../../components/KeyboardAvoidingWrapper';
 import VerificationModal from '../../components/VerificationModal';
 import COLORS from '../../constants/colors';
 import { baseAPIUrl, firebaseURL } from '../../constants/sharedVariables';
@@ -25,6 +24,9 @@ const ResetPassword = () => {
 	const navigation = useNavigation();
 	const route = useRoute();
 	const email = route.params.email;
+	const isResetPassword = route.params.isResetPassword
+		? route.params.isResetPassword
+		: false;
 
 	const checkStrongPassword = (password) => {
 		let validations = [
@@ -128,55 +130,54 @@ const ResetPassword = () => {
 	};
 
 	const sendToLogin = () => {
-		navigation.navigate('Login');
+		if (isResetPassword) navigation.navigate('Settings');
+		else navigation.navigate('Login');
 	};
 
 	return (
 		<SafeAreaView style={wrapper}>
-			<KeyboardAvoidingWrapper>
-				<View style={container}>
-					<View style={{ marginVertical: 22 }}>
-						<Text style={header}>Reset Password</Text>
-						<Text style={description}>
-							Enter your new password below to reset your password.
-						</Text>
-					</View>
-
-					<InputField
-						description="New Password"
-						hint="Enter your new password"
-						keyboardType="default"
-						setValue={setNewPassword}
-						error={newPasswordError}
-						isPassword={true}
-					/>
-					<InputField
-						description="Confirm Password"
-						hint="Confirm your new password"
-						keyboardType="default"
-						setValue={setConfirmPassword}
-						error={confirmPasswordError}
-						isPassword={true}
-					/>
-
-					<Button
-						title="Reset Password"
-						filled={true}
-						onPress={() => handlePasswordReset(newPassword, confirmPassword)}
-						style={{
-							marginTop: 18,
-							marginBottom: 4,
-						}}
-					/>
-					<VerificationModal
-						successful={success}
-						setModalVisible={setModalVisible}
-						modalVisible={modalVisible}
-						requestMessage={requstMessage}
-						handler={sendToLogin}
-					/>
+			<View style={container}>
+				<View style={{ marginVertical: 22 }}>
+					<Text style={header}>Reset Password</Text>
+					<Text style={description}>
+						Enter your new password below to reset your password.
+					</Text>
 				</View>
-			</KeyboardAvoidingWrapper>
+
+				<InputField
+					description="New Password"
+					hint="Enter your new password"
+					keyboardType="default"
+					setValue={setNewPassword}
+					error={newPasswordError}
+					isPassword={true}
+				/>
+				<InputField
+					description="Confirm Password"
+					hint="Confirm your new password"
+					keyboardType="default"
+					setValue={setConfirmPassword}
+					error={confirmPasswordError}
+					isPassword={true}
+				/>
+
+				<Button
+					title="Reset Password"
+					filled={true}
+					onPress={() => handlePasswordReset(newPassword, confirmPassword)}
+					style={{
+						marginTop: 18,
+						marginBottom: 4,
+					}}
+				/>
+				<VerificationModal
+					successful={success}
+					setModalVisible={setModalVisible}
+					modalVisible={modalVisible}
+					requestMessage={requstMessage}
+					handler={sendToLogin}
+				/>
+			</View>
 		</SafeAreaView>
 	);
 };

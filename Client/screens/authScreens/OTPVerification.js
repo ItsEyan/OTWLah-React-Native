@@ -51,6 +51,9 @@ const OTPVerification = () => {
 	const email = route.params.email;
 	const username = route.params.username;
 	const password = route.params.password;
+	const isResetPassword = route.params.isResetPassword
+		? route.params.isResetPassword
+		: false;
 
 	//firebase
 	const auth = getAuth();
@@ -211,6 +214,7 @@ const OTPVerification = () => {
 		if (password === null) {
 			navigation.navigate('ResetPassword', {
 				email: email,
+				isResetPassword: isResetPassword,
 			});
 		} else {
 			signInWithEmailAndPassword(auth, email, password);

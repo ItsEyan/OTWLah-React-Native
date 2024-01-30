@@ -6,6 +6,8 @@ import PartyHistory from '../screens/appScreens/PartyHistory';
 import PartyInfo from '../screens/appScreens/PartyInfo';
 import QRCodeScanner from '../screens/appScreens/QRCodeScanner';
 import Settings from '../screens/appScreens/Settings';
+import OTPVerification from '../screens/authScreens/OTPVerification';
+import ResetPassword from '../screens/authScreens/ResetPassword';
 
 const App = createNativeStackNavigator();
 
@@ -60,6 +62,24 @@ export function AppStack() {
 			<App.Screen
 				name="QRCodeScanner"
 				component={QRCodeScanner}
+				options={{
+					headerShown: false,
+					headerBackTitleVisible: true,
+					headerBackTitle: '',
+				}}
+			/>
+			<App.Screen
+				name="OTPVerification"
+				component={OTPVerification}
+				options={{
+					headerShown: false,
+					headerBackTitleVisible: true,
+					headerBackTitle: '',
+				}}
+			/>
+			<App.Screen
+				name="ResetPassword"
+				component={ResetPassword}
 				options={{
 					headerShown: false,
 					headerBackTitleVisible: true,

@@ -7,6 +7,7 @@ import {
 import { Avatar } from '@rneui/themed';
 import axios from 'axios';
 import * as Location from 'expo-location';
+import * as TaskManager from 'expo-task-manager';
 import {
 	collection,
 	collectionGroup,
@@ -341,22 +342,22 @@ const Map = () => {
 		};
 	}, []);
 
-	// TaskManager.defineTask(
-	// 	BACKGROUND_TRACKER,
-	// 	({ data: { locations }, error }) => {
-	// 		if (error) {
-	// 			console.log(error);
-	// 			return;
-	// 		}
-	// 		console.log('Received new locations', locations);
-	// 		setUserLocation(locations[0]);
-	// 		socket.emit('locationUpdated', partyID, {
-	// 			uid: signedIn.userUID,
-	// 			lat: locations[0].coords.latitude,
-	// 			lng: locations[0].coords.longitude,
-	// 		});
-	// 	}
-	// );
+	TaskManager.defineTask(
+		BACKGROUND_TRACKER,
+		({ data: { locations }, error }) => {
+			if (error) {
+				console.log(error);
+				return;
+			}
+			console.log('Received new locations', locations);
+			setUserLocation(locations[0]);
+			socket.emit('locationUpdated', partyID, {
+				uid: signedIn.userUID,
+				lat: locations[0].coords.latitude,
+				lng: locations[0].coords.longitude,
+			});
+		}
+	);
 
 	useEffect(() => {
 		(async () => {
@@ -624,7 +625,7 @@ const Map = () => {
 		if (difference < 60000) return '< 1m';
 		//Arrange the difference of date in days, hours, minutes, and seconds format
 		let days = Math.floor(difference / (1000 * 60 * 60 * 24));
-		let dayString = 'd';
+		let dayString = 'd ';
 		if (days === 0) {
 			days = '';
 			dayString = '';
@@ -633,7 +634,7 @@ const Map = () => {
 		let hours = Math.floor(
 			(difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
 		);
-		let hourString = 'h';
+		let hourString = 'h ';
 		if (hours === 0) {
 			hours = '';
 			hourString = '';
@@ -642,9 +643,7 @@ const Map = () => {
 		let minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
 		let minuteString = 'm';
 
-		return (
-			days + dayString + ' ' + hours + hourString + ' ' + minutes + minuteString
-		);
+		return days + dayString + hours + hourString + minutes + minuteString;
 	}
 
 	const panelHidden = (value) => {

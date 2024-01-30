@@ -6,6 +6,7 @@ import {
 } from '@firebase/storage';
 import { useNavigation } from '@react-navigation/native';
 import { Avatar } from '@rneui/themed';
+import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import { getAuth, signOut, updateProfile } from 'firebase/auth';
 import {
@@ -32,6 +33,7 @@ import { FIREBASE_DB } from '../../FirebaseConfig';
 import Icon, { Icons } from '../../components/Icons';
 import Uploading from '../../components/Uploading';
 import COLORS from '../../constants/colors';
+import { baseAPIUrl } from '../../constants/sharedVariables';
 import { SignInContext } from '../../contexts/authContext';
 
 const Settings = () => {
@@ -155,6 +157,22 @@ const Settings = () => {
 		}
 	}
 
+	const changePassword = () => {
+		const url = `${baseAPIUrl}/sendResetPasswordEmail`;
+		axios.get(url, {
+			params: {
+				email: signedIn.userEmail,
+				username: signedIn.userDisplayName,
+			},
+		});
+		navigation.navigate('OTPVerification', {
+			email: signedIn.userEmail,
+			username: signedIn.userDisplayName,
+			password: null,
+			isResetPassword: true,
+		});
+	};
+
 	const settingsData = [
 		{
 			title: 'Account',
@@ -207,7 +225,7 @@ const Settings = () => {
 					title: 'Change Password',
 					iconType: Icons.MaterialCommunityIcons,
 					iconName: 'lock-reset',
-					onPress: () => Alert.alert('Change Password'),
+					onPress: changePassword,
 					chevron: true,
 				},
 			],
