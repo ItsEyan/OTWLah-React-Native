@@ -9,6 +9,7 @@ firebase-debug.*.log*
 
 # Firebase cache
 .firebase/
+/functions/otwlah_permissions.json
 
 # Firebase config
 
