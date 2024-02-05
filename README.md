@@ -39,21 +39,21 @@ Navigate through the project's structure using the links below:
 ### Screenshots
 
 <p float="left">
-    <img src='Screenshots/Autocomplete.png' width='300'>
-    <img src='Screenshots/Destination.png' width='300'>
-    <img src='Screenshots/Arrival-Time.png' width='300'>
+    <img src='Screenshots/Autocomplete.png' width='250'>
+    <img src='Screenshots/Destination.png' width='250'>
+    <img src='Screenshots/Arrival-Time.png' width='250'>
 </p>
 <p float="left">
-    <img src='Screenshots/Departure-Time.png' width='300'>
-    <img src='Screenshots/Solo-Directions.png' width='300'>
-    <img src='Screenshots/Party-QR.png' width='300'>
+    <img src='Screenshots/Departure-Time.png' width='250'>
+    <img src='Screenshots/Solo-Directions.png' width='250'>
+    <img src='Screenshots/Party-QR.png' width='250'>
 </p>
 <p float="left">
-    <img src='Screenshots/Party-UI.png' width='300'>
-    <img src='Screenshots/Party-Directions.png' width='300'>
-    <img src='Screenshots/Join-Party.png' width='300'>
+    <img src='Screenshots/Party-UI.png' width='250'>
+    <img src='Screenshots/Party-Directions.png' width='250'>
+    <img src='Screenshots/Join-Party.png' width='250'>
 </p>
 <p float="left">
-    <img src='Screenshots/Party-History.png' width='300'>
-    <img src='Screenshots/Settings.png' width='300'>
+    <img src='Screenshots/Party-History.png' width='250'>
+    <img src='Screenshots/Settings.png' width='250'>
 </p>
