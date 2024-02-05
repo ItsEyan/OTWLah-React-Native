@@ -38,14 +38,14 @@ Navigate through the project's structure using the links below:
 
 ### Screenshots
 
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Autocomplete.png?raw=true)
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Destination.png?raw=true)
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Arrival-Time.png?raw=true)
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Departure-Time.png?raw=true)
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Solo-Directions.png?raw=true)
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Party-QR.png?raw=true)
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Party-UI.png?raw=true)
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Party-Directions.png?raw=true)
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Join-Party.png?raw=true)
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Party-History.png?raw=true)
-![alt text](https://github.com/ItsEyan/OTWLah-React-Native/blob/master/ReadMe%20Photos/Settings.png?raw=true)
+<img src='Screenshots/Autocomplete.png' width='25'>
+<img src='Screenshots/Destination.png' width='25'>
+<img src='Screenshots/Arrival-Time.png' width='25'>
+<img src='Screenshots/Departure-Time.png' width='25'>
+<img src='Screenshots/Solo-Directions.png' width='25'>
+<img src='Screenshots/Party-QR.png' width='25'>
+<img src='Screenshots/Party-UI.png' width='25'>
+<img src='Screenshots/Party-Directions.png' width='25'>
+<img src='Screenshots/Join-Party.png' width='25'>
+<img src='Screenshots/Party-History.png' width='25'>
+<img src='Screenshots/Settings.png' width='25'>
