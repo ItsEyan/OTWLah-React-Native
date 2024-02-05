@@ -35,3 +35,17 @@ Navigate through the project's structure using the links below:
 
 - **Client**: Handles user interface and interaction, communicates with the server for data.
 - **Server**: Manages the backend logic, database interactions, and external API communications.
+
+### Screenshots
+
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Autocomplete.png?raw=true)
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Destination.png?raw=true)
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Arrival-Time.png?raw=true)
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Departure-Time.png?raw=true)
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Solo-Directions.png?raw=true)
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Party-QR.png?raw=true)
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Party-UI.png?raw=true)
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Party-Directions.png?raw=true)
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Join-Party.png?raw=true)
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Party-History.png?raw=true)
+![alt text](https://github.com/itseyan/OTWLah-React-Native/blob/master/Settings.png?raw=true)
